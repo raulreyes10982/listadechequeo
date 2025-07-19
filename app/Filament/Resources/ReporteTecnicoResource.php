@@ -76,18 +76,43 @@ class ReporteTecnicoResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('fecha')
-                    ->date()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('hora'),
-                Tables\Columns\TextColumn::make('equipo_id')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('tipo_intervencion_id')
-                    ->numeric()
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('subidopor')
+                    ->label('Subido por')
+                    ->sortable()
+                    ->searchable()
+                    ->alignment('center'),
+                    //->toggleable(isToggledHiddenByDefault: true),
+                 Tables\Columns\TextColumn::make('fecha')
+                    ->label('Fecha')
+                    ->dateTime('d/M/Y')
+                    ->searchable()
+                    ->sortable()
+                    ->alignment('center'),
+                    //->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('hora')
+                    ->label('Hora')
+                    ->dateTime('H:i')
+                    ->searchable()
+                    ->sortable()
+                    ->alignment('center'),
+                    //->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('equipo.descripcion')
+                    ->label('Equipo')
+                    ->sortable()
+                    ->searchable()
+                    ->alignment('center'),
+                Tables\Columns\TextColumn::make('tipoIntervencion.nombre')
+                    ->label('Tipo de Intervención')
+                    ->sortable()
+                    ->searchable()
+                    ->alignment('center'),
+                Tables\Columns\TextColumn::make('descripcion')
+                    ->label('Observaciones')
+                    ->wrap() // Permite que el texto se ajuste en varias líneas si es necesario
+                    ->alignment('center')
+                    ->sortable()
                     ->searchable(),
+                    //->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -101,11 +126,14 @@ class ReporteTecnicoResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                //Tables\Actions\EditAction::make(),
+                //Tables\Actions\EditAction::make()->label('editar')->modalWidth(MaxWidth::SixExtraLarge),
+                Tables\Actions\EditAction::make()->label('editar')->modalWidth('3xl'),
+                Tables\Actions\DeleteAction::make()->label('eliminar'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -121,8 +149,8 @@ class ReporteTecnicoResource extends Resource
     {
         return [
             'index' => Pages\ListReporteTecnicos::route('/'),
-            'create' => Pages\CreateReporteTecnico::route('/create'),
-            'edit' => Pages\EditReporteTecnico::route('/{record}/edit'),
+            //'create' => Pages\CreateReporteTecnico::route('/create'),
+            //'edit' => Pages\EditReporteTecnico::route('/{record}/edit'),
         ];
     }
 }

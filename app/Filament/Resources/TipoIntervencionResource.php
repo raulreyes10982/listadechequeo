@@ -12,6 +12,8 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Validation\Rule;
+use PhpParser\Node\Stmt\Label;
 
 class TipoIntervencionResource extends Resource
 {
@@ -32,8 +34,8 @@ class TipoIntervencionResource extends Resource
                     ->required()
                     ->columnSpanFull()
                     ->maxLength(250)
-                    ->rule('unique:TipoIntervencion.nombre')
-                    ->default(null),
+                    ->default(null)
+                    ->rules([ Rule::unique('tipo_intervencions', 'nombre'), ])
             ]);
     }
 
@@ -58,7 +60,8 @@ class TipoIntervencionResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()->label('editar')->modalWidth(('lg')),
+                Tables\Actions\DeleteAction::make()->label('eliminar'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -78,8 +81,8 @@ class TipoIntervencionResource extends Resource
     {
         return [
             'index' => Pages\ListTipoIntervencions::route('/'),
-            'create' => Pages\CreateTipoIntervencion::route('/create'),
-            'edit' => Pages\EditTipoIntervencion::route('/{record}/edit'),
+            //'create' => Pages\CreateTipoIntervencion::route('/create'),
+            //'edit' => Pages\EditTipoIntervencion::route('/{record}/edit'),
         ];
     }
 }

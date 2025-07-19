@@ -13,7 +13,8 @@ class EditReporteTecnico extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            //Actions\DeleteAction::make(),
+              Actions\DeleteAction::make()->modalWidth('3xl'),
         ];
     }
 }

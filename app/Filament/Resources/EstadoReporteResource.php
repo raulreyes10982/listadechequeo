@@ -12,6 +12,8 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Validation\Rule;
+use PhpParser\Node\Stmt\Label;
 
 class EstadoReporteResource extends Resource
 {
@@ -30,9 +32,12 @@ class EstadoReporteResource extends Resource
             ->schema([
                 Forms\Components\TextInput::make('nombre')
                     ->required()
-                    ->maxLength(255),
-            ]);
-    }
+                    ->columnSpanFull()
+                    ->maxLength(250)
+                    ->default(null)
+                    ->rules([ Rule::unique('estado_reportes', 'nombre'), ])
+                ]);
+    } 
 
     public static function table(Table $table): Table
     {
@@ -53,7 +58,8 @@ class EstadoReporteResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()->label('editar')->modalWidth(('lg')),
+                Tables\Actions\DeleteAction::make()->label('eliminar'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -73,8 +79,8 @@ class EstadoReporteResource extends Resource
     {
         return [
             'index' => Pages\ListEstadoReportes::route('/'),
-            'create' => Pages\CreateEstadoReporte::route('/create'),
-            'edit' => Pages\EditEstadoReporte::route('/{record}/edit'),
+            //'create' => Pages\CreateEstadoReporte::route('/create'),
+            //'edit' => Pages\EditEstadoReporte::route('/{record}/edit'),
         ];
     }
 }

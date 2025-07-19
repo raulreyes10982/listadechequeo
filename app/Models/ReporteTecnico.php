@@ -50,4 +50,6 @@ class ReporteTecnico extends Model
         });
     }
 
+    
+
 }

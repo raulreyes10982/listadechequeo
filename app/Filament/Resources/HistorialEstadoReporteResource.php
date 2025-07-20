@@ -2,9 +2,6 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\HistorialEstadoReporteResource\RelationManagers;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\HistorialEstadoReporteResource\Pages;
 use App\Models\HistorialEstadoReporte;
 use Filament\Forms;
@@ -13,96 +10,127 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Tables\Columns\TextColumn;
-
-
+use Carbon\Carbon;
 
 
 class HistorialEstadoReporteResource extends Resource
 {
+    public static function canCreate(): bool
+    {
+        return false;
+    }
     protected static ?string $model = HistorialEstadoReporte::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
     protected static ?string $navigationGroup = 'Equipos';
     protected static ?string $navigationLabel = 'Historia Reporte';
     protected static ?string $modelLabel = 'Historia Reporte';
-    protected static ?string $pluralModelLabel = 'Historia Reporte';
+    protected static ?string $pluralModelLabel = 'Bitacora reporte de equipos';
     protected static ?int $navigationSort = 6;
 
     public static function form(Form $form): Form
     {
-        return $form
-            ->schema([
+        return $form->schema([
             Forms\Components\Hidden::make('cambiado_por'),
 
-            DateTimePicker::make('fecha_cambio')
-                ->label('Fecha de cambio')
+            DateTimePicker::make('fecha')
+                ->label('Fecha')
                 ->required()
                 ->default(now()),
 
+            DateTimePicker::make('hora')
+                ->label('Fecha')
+                ->format('Y-m-d')
+                ->default(Carbon::now()->format('Y-m-d'))
+                ->hidden(),
 
             Select::make('reporte_tecnico_id')
-            ->label('Reporte Técnico')
-            ->relationship('reporteTecnico', 'id')
-            ->searchable()
-            ->required(),
+                ->label('Reporte Técnico')
+                ->relationship('reporte_tecnicos', 'id')
+                ->searchable()
+                ->preload()
+                ->required(),
 
             Select::make('estado_reporte_id')
                 ->label('Estado')
-                ->relationship('estado', 'nombre')
+                ->relationship('estadoReporte', 'nombre') // <- relación corregida
+                ->searchable()
+                ->preload()
                 ->required(),
-
             
-            ]);
+        ]);
     }
 
     public static function table(Table $table): Table
     {
-        return $table->columns([
+        return $table
+        ->defaultSort('created_at', 'desc')
+        ->columns([
             TextColumn::make('reporteTecnico.id')
-                ->label('Reporte Técnico'),
+                ->label('N° Reporte')
+                ->sortable()
+                ->searchable()
+                ->alignment('center'),
 
-            TextColumn::make('estado.nombre')
+            TextColumn::make('fecha')
+                ->label('Fecha')
+                ->alignment('center')
+                ->date('d/m/Y'),
+
+            TextColumn::make('hora')
+                ->label('Hora')
+                ->alignment('center')
+                ->time('H:i'),
+            
+            TextColumn::make('cambiado_por')
+                ->label('Responsable')
+                ->sortable()
+                ->searchable()
+                ->alignment('center'),
+            
+            TextColumn::make('reporteTecnico.tipoIntervencion.nombre')
+                ->label('Tipo Intervenció')
+                ->sortable()
+                ->searchable()
+                ->alignment('center'),
+
+            TextColumn::make('reporteTecnico.equipo.tipoEquipo.descripcion')
+                ->label('Equipo')
+                ->sortable()
+                ->searchable()
+                ->alignment('center'),
+
+            TextColumn::make('estadoReporte.nombre') // <- relación corregida
                 ->label('Estado')
                 ->badge()
+                ->sortable()
+                ->searchable()
+                ->alignment('center')
                 ->color(fn ($state) => match ($state) {
                     'Pendiente' => 'warning',
                     'En proceso' => 'info',
                     'Finalizado' => 'success',
                     'Cancelado' => 'danger',
                     default => 'gray',
-                }),
-
-            TextColumn::make('cambiado_por')
-                ->label('Cambiado por'),
-
-            Tables\Columns\TextColumn::make('fecha')
-                    ->label('Fecha')
-                    ->dateTime('d/M/Y')
-                    ->searchable()
+                }), 
+            Tables\Columns\TextColumn::make('created_at')
+                    ->dateTime()
                     ->sortable()
-                    ->alignment('center'),
-                    //->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('hora')
-                    ->label('Hora')
-                    ->dateTime('H:i')
-                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+            Tables\Columns\TextColumn::make('updated_at')
+                    ->dateTime()
                     ->sortable()
-                    ->alignment('center'),
-                    //->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(isToggledHiddenByDefault: true),
         ])
-        ->filters([
-            // Puedes agregar filtros aquí si deseas
-        ])
+        ->filters([])
         ->actions([
-            Tables\Actions\EditAction::make(),
+            //Tables\Actions\EditAction::make(),
         ])
         ->bulkActions([
             Tables\Actions\BulkActionGroup::make([
-                Tables\Actions\DeleteBulkAction::make(),
+            Tables\Actions\DeleteBulkAction::make(),
             ]),
         ]);
     }
@@ -110,7 +138,7 @@ class HistorialEstadoReporteResource extends Resource
     public static function getRelations(): array
     {
         return [
-            // Aquí puedes registrar RelationManagers si deseas
+            // Puedes registrar RelationManagers aquí si deseas mostrar el historial desde ReporteTecnicoResource
         ];
     }
 
@@ -118,8 +146,8 @@ class HistorialEstadoReporteResource extends Resource
     {
         return [
             'index' => Pages\ListHistorialEstadoReportes::route('/'),
-            'create' => Pages\CreateHistorialEstadoReporte::route('/create'),
-            'edit' => Pages\EditHistorialEstadoReporte::route('/{record}/edit'),
+            //'create' => Pages\CreateHistorialEstadoReporte::route('/create'),
+            //'edit' => Pages\EditHistorialEstadoReporte::route('/{record}/edit'),
         ];
     }
 }

@@ -19,6 +19,8 @@ return new class extends Migration
             $table->time('hora')->default(DB::raw('CURRENT_TIME'));
             $table->foreignId('reporte_tecnico_id')->constrained('reporte_tecnicos')->onDelete('cascade');
             $table->foreignId('estado_reporte_id')->constrained('estado_reportes')->onDelete('cascade');
+            $table->text('descripcion')->nullable();
+            $table->timestamps();
         });
     }
 

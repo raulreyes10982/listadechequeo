@@ -15,6 +15,11 @@ class EstadoReporteSeeder extends Seeder
     {
         DB::table('estado_reportes')->insert([
             ['nombre' => 'Pendiente'],
+            ['nombre' => 'En revisión'],
+            ['nombre' => 'Asignado'],
+            ['nombre' => 'En espera'],
+            ['nombre' => 'Rechazado'],
+            ['nombre' => 'Reabierto'],
             ['nombre' => 'En proceso'],
             ['nombre' => 'Finalizado'],
             ['nombre' => 'Cancelado'],

@@ -18,6 +18,7 @@ class HistorialEstadoReporte extends Model
         'fecha',
         'hora',
         'cambiado_por',
+        'descripcion',
     ];
 
     protected static function booted()

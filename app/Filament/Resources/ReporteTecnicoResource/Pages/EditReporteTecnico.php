@@ -17,4 +17,6 @@ class EditReporteTecnico extends EditRecord
               Actions\DeleteAction::make()->modalWidth('3xl'),
         ];
     }
+
+    
 }

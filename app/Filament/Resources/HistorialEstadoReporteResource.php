@@ -9,10 +9,11 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Tables\Columns\TextColumn;
 use Carbon\Carbon;
+use Filament\Forms\Components\{Hidden, TimePicker, DatePicker, Select, Textarea};
+
 
 
 class HistorialEstadoReporteResource extends Resource
@@ -59,6 +60,10 @@ class HistorialEstadoReporteResource extends Resource
                 ->searchable()
                 ->preload()
                 ->required(),
+            Textarea::make('descripcion')
+                ->label('Observaciones')
+                ->rows(4)
+                ->nullable(),
             
         ]);
     }
@@ -115,6 +120,13 @@ class HistorialEstadoReporteResource extends Resource
                     'Cancelado' => 'danger',
                     default => 'gray',
                 }), 
+            TextColumn::make('descripcion')
+                ->label('Observaciones')
+                ->wrap()
+                ->alignment('center')
+                ->sortable()
+                ->searchable(),
+                
             Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()

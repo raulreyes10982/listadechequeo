@@ -18,9 +18,12 @@ use Filament\Resources\Resource;
 use Filament\Notifications\Notification;
 use Filament\Tables\Actions\{ActionGroup, Action};
 use Illuminate\Support\Facades\Auth;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Support\Enums\MaxWidth;
 
 class ReporteTecnicoResource extends Resource
 {
+    
     protected static ?string $model = ReporteTecnico::class;
 
     protected static ?string $navigationGroup = 'Equipos';
@@ -158,6 +161,8 @@ class ReporteTecnicoResource extends Resource
                                 ->options(
                                     EstadoReporte::pluck('nombre', 'id')->toArray()
                                 )
+                                ->searchable()
+                                ->preload()
                                 ->required(),
 
                             Textarea::make('descripcion')
@@ -187,18 +192,21 @@ class ReporteTecnicoResource extends Resource
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('equipo_id')
-                    ->label('Equipo')
-                    ->relationship('equipo', 'descripcion')
-                    ->searchable(),
+                ->label('Equipo')
+                ->relationship('equipo', 'descripcion')
+                    ->searchable()
+    ->preload(),
 
                 Tables\Filters\SelectFilter::make('tipo_intervencion_id')
                     ->label('Tipo Intervención')
                     ->relationship('tipoIntervencion', 'nombre')
+                    ->preload()
                     ->searchable(),
 
-                Tables\Filters\SelectFilter::make('ultimo_estado_estado_reporte_id')
+                Tables\Filters\SelectFilter::make('ultimoEstado.estadoReporte.nombre')
                     ->label('Estado')
                     ->relationship('ultimoEstado.estadoReporte', 'nombre')
+                    ->preload()
                     ->searchable(),
 
                 Tables\Filters\Filter::make('fecha')
@@ -211,7 +219,11 @@ class ReporteTecnicoResource extends Resource
                             ->when($data['desde'], fn($q, $date) => $q->whereDate('fecha', '>=', $date))
                             ->when($data['hasta'], fn($q, $date) => $q->whereDate('fecha', '<=', $date));
                     }),
-            ])
+                ],
+                layout: FiltersLayout::Modal // <-- mostrarlos como modal
+            )
+            ->filtersFormWidth('lg') // ancho del modal
+            ->filtersFormMaxHeight('70vh') // alto máximo con scroll interno
 
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

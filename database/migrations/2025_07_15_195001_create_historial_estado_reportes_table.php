@@ -17,9 +17,9 @@ return new class extends Migration
             $table->string('cambiado_por', 255);
             $table->date('fecha')->default(DB::raw('CURRENT_DATE'));
             $table->time('hora')->default(DB::raw('CURRENT_TIME'));
+            $table->text('descripcion')->nullable();
             $table->foreignId('reporte_tecnico_id')->constrained('reporte_tecnicos')->onDelete('cascade');
             $table->foreignId('estado_reporte_id')->constrained('estado_reportes')->onDelete('cascade');
-            $table->text('descripcion')->nullable();
             $table->timestamps();
         });
     }

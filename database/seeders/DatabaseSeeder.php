@@ -39,7 +39,7 @@ class DatabaseSeeder extends Seeder
             EstadoReporteSeeder::class,
             TipoIntervencionSeeder::class,
             ReporteTecnicoSeeder::class,
-            HistorialEstadoReporteSeeder::class,
+            //HistorialEstadoReporteSeeder::class,
             ColaboradorSeeder::class, 
             
         ]);

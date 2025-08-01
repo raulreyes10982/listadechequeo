@@ -3,13 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
 class Reporte extends Model
 {
     use HasFactory;
+
+    protected $table = 'reportes';
 
     protected $fillable = [
         'fecha',
@@ -19,11 +21,17 @@ class Reporte extends Model
         'subidopor',
         'categoria_reporte_id',
         'tipo_reporte_id',
+        'zona_id',
+        'prioridad_id',
+        'estado_id',
+        'local_id',
         'equipo_id',
     ];
 
     protected $casts = [
         'imagenes' => 'array',
+        'fecha' => 'date',
+        'hora' => 'datetime:H:i:s',
     ];
 
     protected static function booted()
@@ -35,19 +43,50 @@ class Reporte extends Model
         });
     }
 
-    // Relaciones
-    public function categoria()
+    /*
+    |--------------------------------------------------------------------------
+    | Relaciones
+    |--------------------------------------------------------------------------
+    */
+
+    public function categoria(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(CategoriaReporte::class, 'categoria_reporte_id');
     }
 
-    public function tipoReporte()
+    public function tipoReporte(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(TipoReporte::class, 'tipo_reporte_id');
     }
 
-    public function equipo()
+    public function zona(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(Equipo::class);
+        return $this->belongsTo(Zona::class, 'zona_id');
+    }
+
+    public function prioridad(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Prioridad::class, 'prioridad_id');
+    }
+
+    public function estado(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Estado::class, 'estado_id');
+    }
+
+    // Relación con local
+    public function local()
+    {
+        return $this->belongsTo(Local::class);
+    }
+
+    public function equipo(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Equipo::class, 'equipo_id');
+    }
+
+    public function seguimientos()
+    {
+        return $this->hasMany(SeguimientoReporte::class);
     }
 }

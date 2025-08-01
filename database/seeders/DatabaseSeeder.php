@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Prioridad;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
@@ -35,12 +36,14 @@ class DatabaseSeeder extends Seeder
             NovedadSeeder::class,
             CategoriaReporteSeeder::class,
             TipoReporteSeeder::class,
-            ReporteSeeder::class,
+            //ReporteSeeder::class,
             EstadoReporteSeeder::class,
             TipoIntervencionSeeder::class,
             ReporteTecnicoSeeder::class,
             //HistorialEstadoReporteSeeder::class,
-            ColaboradorSeeder::class, 
+            ColaboradorSeeder::class,
+            ZonaSeeder::class,
+            PrioridadSeeder::class,
             
         ]);
     }

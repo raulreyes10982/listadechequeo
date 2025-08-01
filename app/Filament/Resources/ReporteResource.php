@@ -2,32 +2,34 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Support\Enums\MaxWidth;
-use Filament\Forms\Components\Hidden;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\ImageColumn;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Filament\Resources\ReporteResource\RelationManagers;
 use App\Filament\Resources\ReporteResource\Pages;
+use App\Filament\Resources\ReporteResource\RelationManagers;
+use App\Filament\Resources\ReporteResource\RelationManagers\SeguimientosRelationManager;
 use App\Models\Reporte;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Support\Enums\MaxWidth;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\FileUpload;
 use Carbon\Carbon;
 
 
 class ReporteResource extends Resource
 {
-    
     protected static ?string $model = Reporte::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
     protected static ?string $navigationGroup = 'Reportes';
     protected static ?string $navigationLabel = 'Reportes';
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 9;
+
 
     public static function form(Form $form): Form
     {
@@ -35,19 +37,16 @@ class ReporteResource extends Resource
             ->columns(6)
             ->schema([
                 Forms\Components\Hidden::make('subidopor'),
-
                 Forms\Components\TimePicker::make('hora')
                     ->label('Hora')
                     ->format('H:i')
                     ->default(Carbon::now()->format('H:i'))
                     ->hidden(),
-
                 Forms\Components\DatePicker::make('fecha')
                     ->label('Fecha')
                     ->format('Y-m-d')
                     ->default(Carbon::now()->format('Y-m-d'))
                     ->hidden(),
-
                 Forms\Components\Select::make('categoria_reporte_id')
                     ->label('Categoría')
                     ->relationship('categoria', 'descripcion')
@@ -55,7 +54,6 @@ class ReporteResource extends Resource
                     ->searchable()
                     ->required()
                     ->columnSpan(3),
-
                 Forms\Components\Select::make('tipo_reporte_id')
                     ->label('Tipo de Reporte')
                     ->relationship('tipoReporte', 'descripcion')
@@ -63,12 +61,24 @@ class ReporteResource extends Resource
                     ->searchable()
                     ->required()
                     ->columnSpan(3),
-
+                Forms\Components\Select::make('zona_id')
+                    ->relationship('zona', 'descripcion')
+                    ->preload() // 
+                    ->searchable()
+                    ->required()
+                    ->columnSpan(3),
+                Select::make('local_id')
+                    ->label('Unidad Privada')
+                    ->relationship('local', 'descripcion')
+                    ->getOptionLabelFromRecordUsing(fn ($record) => $record->option_label)
+                    ->searchable()
+                    //->required()
+                    ->columnSpan(3)
+                    ->preload(),
                 Forms\Components\Textarea::make('descripcion')
                     ->label('Descripción')
                     ->maxLength(500)
                     ->columnSpan(5),
-
                 FileUpload::make('imagenes')
                     ->label('Imágenes')
                     ->directory('reportes')
@@ -77,6 +87,16 @@ class ReporteResource extends Resource
                     ->multiple()
                     ->maxFiles(3)
                     ->columnSpan(1),
+                Forms\Components\Select::make('prioridad_id')
+                    ->relationship('prioridad', 'descripcion')
+                    ->preload() // 
+                    ->searchable()
+                    ->required()
+                    ->columnSpan(3),
+                Forms\Components\Select::make('estado_id')
+                    ->relationship('estado', 'descripcion')
+                    ->default(null),
+                
             ]);
     }
 
@@ -104,48 +124,50 @@ class ReporteResource extends Resource
                     ->sortable()
                     ->alignment('center'),
                     //->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('categoria.descripcion')
+                    ->label('Reporte')
+                    ->numeric()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('tipoReporte.descripcion')
                     ->label('Tipo de Reporte')
                     ->sortable()
                     ->searchable()
                     ->alignment('center'),
                     //->toggleable(isToggledHiddenByDefault: true),
-                /*Tables\Columns\TextColumn::make('categoriaReporte.descripcion')
-                    ->label('Categoria')
+                Tables\Columns\TextColumn::make('zona.descripcion')
+                    ->label('Zona')
                     ->sortable()
                     ->searchable()
-                    ->alignment('center')
-                    ->toggleable(isToggledHiddenByDefault: true),*/
+                    ->alignment('center'),
+                Tables\Columns\TextColumn::make('prioridad.descripcion')
+                    ->label('Prioridad')
+                    ->sortable()
+                    ->searchable()
+                    ->alignment('center'),
+                Tables\Columns\TextColumn::make('estado.descripcion')
+                    ->label('Estado')
+                    ->sortable()
+                    ->searchable()
+                    ->alignment('center'),
+                Tables\Columns\TextColumn::make('unidad_privada')
+                ->label('Unidad Privada')
+                    ->getStateUsing(fn ($record) => $record->local?->option_label)
+                    ->sortable()
+                    ->searchable()
+                    ->alignment('center'),
                 Tables\Columns\TextColumn::make('descripcion')
                     ->label('Observaciones')
+                    ->wrap()
+                    ->alignment('center')
                     ->sortable()
                     ->searchable()
-                    ->wrap() // Permite que el texto se ajuste en varias líneas si es necesario
-                    ->alignment('center'),
-                    //->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\ImageColumn::make('imagenes')
-                    ->label('Imágenes')
-                    ->getStateUsing(function ($record) {
-                        // Asume que 'imagenes' es un string o un array
-                        $imagePath = is_array($record->imagenes) ? collect($record->imagenes)->first() : $record->imagenes;
-                        return $imagePath ? asset('storage/' . $imagePath) : null;
-                    })
-                    ->url(function ($record) {
-                        // Genera la URL para la imagen
-                        $imagePath = is_array($record->imagenes) ? collect($record->imagenes)->first() : $record->imagenes;
-                        return $imagePath ? asset('storage/' . $imagePath) : null;
-                    }, shouldOpenInNewTab: true) // Abre el enlace en una nueva pestaña
-                    ->sortable()
-                    ->alignment('center')
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('Creado en')
                     ->dateTime()
                     ->sortable()
-                    ->alignment('center')
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')
-                    ->label('Actualizado en')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -154,24 +176,23 @@ class ReporteResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make()->label('editar')->modalWidth('3xl'),
-                //Tables\Actions\EditAction::make()->label('editar')->modalWidth(MaxWidth::SixExtraLarge),
+                //Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()->label('editar')->modalWidth(MaxWidth::SixExtraLarge),
                 Tables\Actions\DeleteAction::make()->label('eliminar'),
-
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
     }
 
     public static function getRelations(): array
-    {
-        return [
-            //
-        ];
-    }
+{
+    return [
+        SeguimientosRelationManager::class,
+    ];
+}
 
     public static function getPages(): array
     {

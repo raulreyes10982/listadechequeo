@@ -4,8 +4,9 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use App\Models\Estado;
 
-class ReporteSeeder extends Seeder
+class EstadoSeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -13,5 +14,10 @@ class ReporteSeeder extends Seeder
     public function run(): void
     {
         //
+        $estados = ['Pendiente', 'En proceso', 'Resuelto'];
+
+    foreach ($estados as $estado) {
+        Estado::create(['descripcion' => $estado]);
+    }
     }
 }

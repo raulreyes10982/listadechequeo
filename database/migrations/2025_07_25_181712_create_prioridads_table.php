@@ -11,10 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('locals', function (Blueprint $table) {
-            $table->id();
-            $table->string('nombre', 250); 
-            $table->foreignId('nomenclatura_id')->constrained()->onDelete('cascade')->nullable();
+        Schema::create('prioridads', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('descripcion', 250)->nullable();
             $table->timestamps();
         });
     }
@@ -24,6 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('locals');
+        Schema::dropIfExists('prioridads');
     }
 };

@@ -16,4 +16,9 @@ class Local extends Model
     {
         return $this->belongsTo(Nomenclatura::class);
     }
+
+    public function getOptionLabelAttribute()
+    {
+        return $this->nomenclatura->codigo . ' - ' . $this->nombre;
+    }
 }

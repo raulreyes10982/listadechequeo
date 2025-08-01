@@ -161,8 +161,6 @@ class ReporteTecnicoResource extends Resource
                                 ->options(
                                     EstadoReporte::pluck('nombre', 'id')->toArray()
                                 )
-                                ->searchable()
-                                ->preload()
                                 ->required(),
 
                             Textarea::make('descripcion')

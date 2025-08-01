@@ -17,6 +17,10 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use App\Filament\Widgets\EquiposFallosChartWidget;
+use App\Filament\Widgets\EquiposEstadoWidget;
+
+
 
 class DashboardPanelProvider extends PanelProvider
 {
@@ -39,6 +43,7 @@ class DashboardPanelProvider extends PanelProvider
             ->widgets([
                 //Widgets\AccountWidget::class,
                 //Widgets\FilamentInfoWidget::class,
+                
                 
                 
             ])

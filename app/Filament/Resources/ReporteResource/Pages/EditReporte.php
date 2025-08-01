@@ -5,6 +5,8 @@ namespace App\Filament\Resources\ReporteResource\Pages;
 use App\Filament\Resources\ReporteResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
+use Filament\Support\Enums\MaxWidth;
+
 
 class EditReporte extends EditRecord
 {
@@ -13,7 +15,7 @@ class EditReporte extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make()->modalWidth('3xl'),
+            Actions\DeleteAction::make()->modalWidth(MaxWidth::SixExtraLarge),
         ];
     }
 }

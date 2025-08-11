@@ -6,6 +6,7 @@ use App\Filament\Resources\ReporteResource\Pages;
 use App\Filament\Resources\ReporteResource\RelationManagers;
 use App\Filament\Resources\ReporteResource\RelationManagers\SeguimientosRelationManager;
 use App\Models\Reporte;
+use App\Models\Zona;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -20,7 +21,6 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\FileUpload;
 use Carbon\Carbon;
 
-
 class ReporteResource extends Resource
 {
     protected static ?string $model = Reporte::class;
@@ -28,8 +28,7 @@ class ReporteResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
     protected static ?string $navigationGroup = 'Reportes';
     protected static ?string $navigationLabel = 'Reportes';
-    protected static ?int $navigationSort = 9;
-
+    protected static ?int $navigationSort = 7;
 
     public static function form(Form $form): Form
     {
@@ -37,48 +36,82 @@ class ReporteResource extends Resource
             ->columns(6)
             ->schema([
                 Forms\Components\Hidden::make('subidopor'),
+
                 Forms\Components\TimePicker::make('hora')
                     ->label('Hora')
                     ->format('H:i')
                     ->default(Carbon::now()->format('H:i'))
                     ->hidden(),
+
                 Forms\Components\DatePicker::make('fecha')
                     ->label('Fecha')
                     ->format('Y-m-d')
                     ->default(Carbon::now()->format('Y-m-d'))
                     ->hidden(),
+
                 Forms\Components\Select::make('categoria_reporte_id')
                     ->label('Categoría')
                     ->relationship('categoria', 'descripcion')
-                    ->preload() // 
+                    ->preload()
                     ->searchable()
                     ->required()
-                    ->columnSpan(3),
+                    ->columnSpan(2),
+
                 Forms\Components\Select::make('tipo_reporte_id')
                     ->label('Tipo de Reporte')
                     ->relationship('tipoReporte', 'descripcion')
-                    ->preload() // 
+                    ->preload()
                     ->searchable()
                     ->required()
-                    ->columnSpan(3),
-                Forms\Components\Select::make('zona_id')
+                    ->columnSpan(2),
+
+                Forms\Components\Select::make('prioridad_id')
+                    ->relationship('prioridad', 'descripcion')
+                    ->preload()
+                    ->searchable()
+                    ->required()
+                    ->columnSpan(2),
+
+                Select::make('zona_id')
+                    ->label('Zona')
                     ->relationship('zona', 'descripcion')
-                    ->preload() // 
+                    ->preload()
                     ->searchable()
                     ->required()
-                    ->columnSpan(3),
+                    ->columnSpan(3)
+                    ->reactive()
+                    ->afterStateUpdated(function (callable $set, $state) {
+                        $zona = Zona::find($state);
+                        if (!$zona || $zona->descripcion !== 'Zona Privada') {
+                            $set('local_id', null);
+                        } else {
+                            $set('ubicacion_id', null);
+                        }
+                    }),
+
+                Select::make('ubicacion_id')
+                    ->label('Ubicación')
+                    ->relationship('ubicacion', 'descripcion')
+                    ->preload()
+                    ->searchable()
+                    ->required()
+                    ->columnSpan(3)
+                    ->visible(fn (callable $get) => optional(Zona::find($get('zona_id')))->descripcion !== 'Zona Privada'),
+
                 Select::make('local_id')
                     ->label('Unidad Privada')
                     ->relationship('local', 'descripcion')
                     ->getOptionLabelFromRecordUsing(fn ($record) => $record->option_label)
                     ->searchable()
-                    //->required()
                     ->columnSpan(3)
-                    ->preload(),
+                    ->preload()
+                    ->visible(fn (callable $get) => optional(Zona::find($get('zona_id')))->descripcion === 'Zona Privada'),
+
                 Forms\Components\Textarea::make('descripcion')
                     ->label('Descripción')
                     ->maxLength(500)
                     ->columnSpan(5),
+
                 FileUpload::make('imagenes')
                     ->label('Imágenes')
                     ->directory('reportes')
@@ -87,16 +120,14 @@ class ReporteResource extends Resource
                     ->multiple()
                     ->maxFiles(3)
                     ->columnSpan(1),
-                Forms\Components\Select::make('prioridad_id')
-                    ->relationship('prioridad', 'descripcion')
-                    ->preload() // 
-                    ->searchable()
-                    ->required()
-                    ->columnSpan(3),
+
                 Forms\Components\Select::make('estado_id')
                     ->relationship('estado', 'descripcion')
-                    ->default(null),
-                
+                    ->preload()
+                    ->searchable()
+                    ->columnSpan(3)
+                    ->visibleOn(['edit', 'view'])
+                    ->disabled(),
             ]);
     }
 
@@ -109,53 +140,69 @@ class ReporteResource extends Resource
                     ->sortable()
                     ->searchable()
                     ->alignment('center'),
-                    //->toggleable(isToggledHiddenByDefault: true),
+
                 Tables\Columns\TextColumn::make('fecha')
                     ->label('Fecha')
                     ->dateTime('d/M/Y')
                     ->searchable()
                     ->sortable()
                     ->alignment('center'),
-                    //->toggleable(isToggledHiddenByDefault: true),
+
                 Tables\Columns\TextColumn::make('hora')
                     ->label('Hora')
                     ->dateTime('H:i')
                     ->searchable()
                     ->sortable()
                     ->alignment('center'),
-                    //->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('categoria.descripcion')
                     ->label('Reporte')
                     ->numeric()
                     ->sortable(),
+
                 Tables\Columns\TextColumn::make('tipoReporte.descripcion')
                     ->label('Tipo de Reporte')
                     ->sortable()
                     ->searchable()
                     ->alignment('center'),
-                    //->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('zona.descripcion')
-                    ->label('Zona')
-                    ->sortable()
-                    ->searchable()
-                    ->alignment('center'),
+
                 Tables\Columns\TextColumn::make('prioridad.descripcion')
                     ->label('Prioridad')
                     ->sortable()
                     ->searchable()
                     ->alignment('center'),
-                Tables\Columns\TextColumn::make('estado.descripcion')
-                    ->label('Estado')
+
+                Tables\Columns\TextColumn::make('zona.descripcion')
+                    ->label('Zona')
                     ->sortable()
                     ->searchable()
                     ->alignment('center'),
-                Tables\Columns\TextColumn::make('unidad_privada')
-                ->label('Unidad Privada')
-                    ->getStateUsing(fn ($record) => $record->local?->option_label)
-                    ->sortable()
+
+                Tables\Columns\TextColumn::make('ubicacion_y_unidad')
+                    ->label('Ubicación')
+                    ->getStateUsing(function ($record) {
+                        $ubicacion = $record->ubicacion->descripcion ?? '';
+                        $unidadPrivada = $record->local?->option_label;
+                        return $unidadPrivada ? "{$ubicacion} Local {$unidadPrivada}" : $ubicacion;
+                    })
                     ->searchable()
+                    ->sortable()
                     ->alignment('center'),
+
+                    Tables\Columns\TextColumn::make('estado.descripcion')
+                        ->label('Estado')
+                        ->badge()
+                        ->color(fn ($state) => match ($state) {
+                            'Pendiente'   => 'danger',    // rojo
+                            'En proceso'  => 'warning',   // amarillo
+                            'Verificado'  => 'info',      // azul claro
+                            'Finalizado'  => 'success',   // verde
+                            default       => 'gray',      // gris por defecto
+                        })
+                        ->sortable()
+                        ->searchable()
+                        ->alignment('center'),
+
                 Tables\Columns\TextColumn::make('descripcion')
                     ->label('Observaciones')
                     ->wrap()
@@ -163,22 +210,25 @@ class ReporteResource extends Resource
                     ->sortable()
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+
                 Tables\Columns\TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->filters([
-                //
-            ])
+            ->filters([])
             ->actions([
-                //Tables\Actions\EditAction::make(),
-                Tables\Actions\EditAction::make()->label('editar')->modalWidth(MaxWidth::SixExtraLarge),
-                Tables\Actions\DeleteAction::make()->label('eliminar'),
+                Tables\Actions\EditAction::make()
+                    ->label('editar')
+                    ->modalWidth(MaxWidth::FourExtraLarge),
+
+                Tables\Actions\DeleteAction::make()
+                    ->label('eliminar'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -188,11 +238,11 @@ class ReporteResource extends Resource
     }
 
     public static function getRelations(): array
-{
-    return [
-        SeguimientosRelationManager::class,
-    ];
-}
+    {
+        return [
+            
+        ];
+    }
 
     public static function getPages(): array
     {

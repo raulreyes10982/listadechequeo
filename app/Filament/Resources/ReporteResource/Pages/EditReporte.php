@@ -15,7 +15,7 @@ class EditReporte extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make()->modalWidth(MaxWidth::SixExtraLarge),
+            Actions\DeleteAction::make()->modalWidth(MaxWidth::FourExtraLarge),
         ];
     }
 }

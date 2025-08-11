@@ -4,7 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\CategoriaReporteResource\Pages;
 use App\Filament\Resources\CategoriaReporteResource\RelationManagers;
-use App\Models\CategoriaReportes;
+use App\Models\CategoriaReporte;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -15,6 +15,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class CategoriaReporteResource extends Resource
 {
+    protected static ?string $model = CategoriaReporte::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-tag';
     protected static ?string $navigationLabel = 'Categorías de Reporte';
     protected static ?string $pluralModelLabel = 'Categorías de Reporte';
@@ -30,8 +32,8 @@ class CategoriaReporteResource extends Resource
                     ->required()
                     ->columnSpanFull()
                     ->maxLength(250)
-                    //->rule('unique:,descripcion')
-                    ->default(null), 
+                    ->unique(ignoreRecord: true)
+                    ->default(null),
             ]);
     }
 

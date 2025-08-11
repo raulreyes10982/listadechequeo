@@ -23,6 +23,7 @@ return new class extends Migration
             $table->foreignId('categoria_reporte_id')->nullable()->constrained('categorias_reporte')->onDelete('set null');
             $table->foreignId('tipo_reporte_id')->nullable()->constrained('tipo_reportes')->onDelete('set null');
             $table->foreignId('zona_id')->nullable()->constrained('zonas')->onDelete('set null');
+            $table->foreignId('ubicacion_id')->nullable()->constrained('ubicacions')->onDelete('set null');
             $table->foreignId('prioridad_id')->nullable()->constrained('prioridads')->onDelete('set null');
             $table->foreignId('estado_id')->nullable()->constrained('estados')->onDelete('set null');
             $table->foreignId('local_id')->nullable()->constrained('locals')->onDelete('set null');

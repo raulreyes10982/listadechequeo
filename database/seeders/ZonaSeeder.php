@@ -13,7 +13,7 @@ class ZonaSeeder extends Seeder
      */
     public function run(): void
     {
-        $zonas = ['Pasillo 1', 'Pasillo 2', 'Pasillo 3', 'Parqueadero', 'Local', 'baños 2 piso'];
+        $zonas = ['Zona Privada', ' Zona Comun', 'Zona Externa', 'Zona Parqueadero',];
 
     foreach ($zonas as $zona) {
         Zona::create(['descripcion' => $zona]);

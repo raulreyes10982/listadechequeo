@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\EstadoResource\Pages;
-use App\Filament\Resources\EstadoResource\RelationManagers;
-use App\Models\Estado;
+use App\Filament\Resources\UbicacionResource\Pages;
+use App\Filament\Resources\UbicacionResource\RelationManagers;
+use App\Models\Ubicacion;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -13,24 +13,25 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class EstadoResource extends Resource
+class UbicacionResource extends Resource
 {
-    protected static ?string $model = Estado::class;
+    protected static ?string $model = Ubicacion::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
     protected static ?string $navigationGroup = 'Reportes';
-    protected static ?string $navigationLabel = 'Estados';
-    protected static ?int $navigationSort = 6;
+    protected static ?string $navigationLabel = 'Ubicacion';
+    protected static ?int $navigationSort = 4;
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
+                //
                 Forms\Components\TextInput::make('descripcion')
                     ->maxLength(250)
                     ->columnSpanFull()
                     ->required()
-                    ->rule('unique:estados,descripcion')
+                    ->rule('unique:zonas,descripcion')
                     ->default(null),
             ]);
     }
@@ -54,8 +55,8 @@ class EstadoResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make()->label('Editar')->modalWidth('lg'),
-                Tables\Actions\DeleteAction::make()->label('Eliminar'),
+                Tables\Actions\EditAction::make()->label('editar')->modalWidth('lg'),
+                Tables\Actions\DeleteAction::make()->label('eliminar'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -74,9 +75,9 @@ class EstadoResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListEstados::route('/'),
-            //'create' => Pages\CreateEstado::route('/create'),
-            //'edit' => Pages\EditEstado::route('/{record}/edit'),
+            'index' => Pages\ListUbicacions::route('/'),
+            //'create' => Pages\CreateUbicacion::route('/create'),
+            //'edit' => Pages\EditUbicacion::route('/{record}/edit'),
         ];
     }
 }

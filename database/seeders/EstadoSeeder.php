@@ -14,7 +14,7 @@ class EstadoSeeder extends Seeder
     public function run(): void
     {
         //
-        $estados = ['Pendiente', 'En proceso', 'Resuelto'];
+        $estados = ['Pendiente', 'En proceso', 'verificado'. 'Finalizado'];
 
     foreach ($estados as $estado) {
         Estado::create(['descripcion' => $estado]);

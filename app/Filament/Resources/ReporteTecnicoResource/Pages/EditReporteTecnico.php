@@ -14,7 +14,7 @@ class EditReporteTecnico extends EditRecord
     {
         return [
             //Actions\DeleteAction::make(),
-              Actions\DeleteAction::make()->modalWidth('3xl'),
+            Actions\DeleteAction::make()->modalWidth('3xl'),
         ];
     }
 

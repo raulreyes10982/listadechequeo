@@ -28,7 +28,7 @@ class ReporteTecnicoResource extends Resource
 
     protected static ?string $navigationGroup = 'Equipos';
     protected static ?string $navigationLabel = 'Reporte Técnico';
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-document-text';
     protected static ?string $modelLabel = 'Reporte Técnico';
     protected static ?string $pluralModelLabel = 'Reportes Técnicos';
     protected static ?int $navigationSort = 5;

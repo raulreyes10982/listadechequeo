@@ -30,7 +30,11 @@ class DashboardPanelProvider extends PanelProvider
             ->default()
             ->id('dashboard')
             ->path('dashboard')
+            ->sidebarCollapsibleOnDesktop()
+            ->sidebarFullyCollapsibleOnDesktop()
+            
             ->login()
+            
             ->colors([
                 'primary' => Color::Amber,
             ])
@@ -72,6 +76,11 @@ class DashboardPanelProvider extends PanelProvider
 ])
             ->authMiddleware([
                 Authenticate::class,
-            ]);
+            ])
+            
+            
+            
+            
+            ;
     }
 }

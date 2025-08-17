@@ -19,7 +19,7 @@ class EstadoReporteResource extends Resource
 {
     protected static ?string $model = EstadoReporte::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
     protected static ?string $navigationGroup = 'Equipos';
     protected static ?string $navigationLabel = 'Estado Reporte';
     protected static ?string $modelLabel = 'Estado Reporte';

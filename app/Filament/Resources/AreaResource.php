@@ -20,9 +20,11 @@ class AreaResource extends Resource
 {
     protected static ?string $model = Area::class;
 
+    protected static ?string $navigationIcon = 'heroicon-o-view-columns';
     protected static ?string $navigationGroup = 'Organización';
     protected static ?string $navigationLabel = 'Áreas';
-    protected static ?string $navigationIcon = 'heroicon-o-view-columns';
+    protected static ?string $pluralLabel = 'Áreas';   // Título en listado
+    protected static ?string $label = 'Áreas';         // Título en singular
     protected static ?int $navigationSort = 2;
 
 

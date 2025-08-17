@@ -19,7 +19,7 @@ class TipoIntervencionResource extends Resource
 {
     protected static ?string $model = TipoIntervencion::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-wrench-screwdriver';
     protected static ?string $navigationGroup = 'Equipos';
     protected static ?string $navigationLabel = 'Tipo Intervencion';
     protected static ?string $modelLabel = 'Tipo Intervencion';

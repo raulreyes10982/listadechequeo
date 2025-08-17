@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\CategoriaLocal;
 use App\Models\Prioridad;
 use App\Models\Ubicacion;
 use App\Models\User;
@@ -19,8 +20,8 @@ class DatabaseSeeder extends Seeder
     {
 
         $this->call([
-            NomenclaturaSeeder::class,
-            LocalSeeder::class,
+
+            
             GrupoSanguineoSeeder::class,
             EstadoCivilSeeder::class,
             GeneroSeeder::class,
@@ -29,6 +30,9 @@ class DatabaseSeeder extends Seeder
             TipoEquipoSeeder::class,
             TipoNovedadSeeder::class,
             PuestoSeguridadSeeder::class,
+            CategoriaLocalSeeder::class,
+            NomenclaturaSeeder::class,
+            LocalSeeder::class,
             DepartamentoSeeder::class,
             AreaSeeder::class,
             CargoSeeder::class,

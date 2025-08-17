@@ -11,14 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('nomenclaturas', function (Blueprint $table) {
+        Schema::create('categoria_locals', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('codigo', 50); 
-            $table->integer('piso')->nullable();
-            $table->string('modulo')->nullable();
-            $table->foreignId('categoria_local_id')->nullable()->constrained('categoria_locals')->onDelete('set null');
+            $table->string('descripcion', 250)->nullable();
             $table->timestamps();
-        
         });
     }
 
@@ -27,6 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('nomenclaturas');
+        Schema::dropIfExists('categoria_locals');
     }
 };

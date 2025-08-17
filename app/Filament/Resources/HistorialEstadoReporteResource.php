@@ -24,7 +24,7 @@ class HistorialEstadoReporteResource extends Resource
     }
     protected static ?string $model = HistorialEstadoReporte::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-archive-box';
     protected static ?string $navigationGroup = 'Equipos';
     protected static ?string $navigationLabel = 'Historia Reporte';
     protected static ?string $modelLabel = 'Historia Reporte';

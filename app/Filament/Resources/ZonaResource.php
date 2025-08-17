@@ -17,9 +17,9 @@ class ZonaResource extends Resource
 {
     protected static ?string $model = Zona::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-map-pin';
     protected static ?string $navigationGroup = 'Reportes';
-    protected static ?string $navigationLabel = 'Zona';
+    protected static ?string $navigationLabel = 'Zona del reporte';
     protected static ?int $navigationSort = 3;
 
     public static function form(Form $form): Form

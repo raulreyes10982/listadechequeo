@@ -10,7 +10,11 @@ class Local extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['nombre', 'nomenclatura_id'];
+    protected $fillable = [
+        'nombre', 
+        'nomenclatura_id',
+        'categoria_local_id',
+    ];
 
     public function nomenclatura()
     {
@@ -18,7 +22,9 @@ class Local extends Model
     }
 
     public function getOptionLabelAttribute()
-    {
-        return $this->nomenclatura->codigo . ' - ' . $this->nombre;
-    }
+{
+    return ($this->nomenclatura?->categoriaLocal?->descripcion ?? 'Sin categoría')
+        . ' ' . ($this->nomenclatura?->codigo ?? 'Sin código')
+        . ' - ' . $this->nombre;
+}
 }

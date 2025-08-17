@@ -14,7 +14,9 @@ return new class extends Migration
         Schema::create('locals', function (Blueprint $table) {
             $table->id();
             $table->string('nombre', 250); 
-            $table->foreignId('nomenclatura_id')->constrained()->onDelete('cascade')->nullable();
+            $table->foreignId('nomenclatura_id')->nullable()->constrained('nomenclaturas')->onDelete('set null');
+            $table->foreignId('categoria_local_id')->nullable()->constrained('categoria_locals')->onDelete('set null');
+
             $table->timestamps();
         });
     }

@@ -2,37 +2,37 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\UbicacionResource\Pages;
-use App\Filament\Resources\UbicacionResource\RelationManagers;
-use App\Models\Ubicacion;
+use App\Filament\Resources\CategoriaLocalResource\Pages;
+use App\Models\CategoriaLocal;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class UbicacionResource extends Resource
+class CategoriaLocalResource extends Resource
 {
-    protected static ?string $model = Ubicacion::class;
+    protected static ?string $model = CategoriaLocal::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-map';
-    protected static ?string $navigationGroup = 'Reportes';
-    protected static ?string $navigationLabel = 'Ubicacion del reporte';
-    protected static ?int $navigationSort = 4;
+    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationGroup = 'Localización';
+    protected static ?string $navigationLabel = 'Categoria';
+    protected static ?string $pluralLabel = 'Categoria';   // Título en listado
+    protected static ?string $label = 'Categoria';         // Título en singular
+    protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                //
                 Forms\Components\TextInput::make('descripcion')
-                    ->maxLength(250)
-                    ->columnSpanFull()
+                    ->label('Nombre de la Categoría')
                     ->required()
-                    ->rule('unique:zonas,descripcion')
-                    ->default(null),
+                    ->unique(ignoreRecord: true)
+                    ->default(null)
+                    ->columnSpanFull()
+                    ->maxLength(255),
+
             ]);
     }
 
@@ -40,8 +40,15 @@ class UbicacionResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('id')
+                    ->sortable()
+                    ->label('ID'),
+
                 Tables\Columns\TextColumn::make('descripcion')
-                    ->searchable(),
+                    ->label('Categoría')
+                    ->searchable()
+                    ->sortable(),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -51,33 +58,27 @@ class UbicacionResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->filters([
-                //
-            ])
+            ->filters([])
             ->actions([
                 Tables\Actions\EditAction::make()->label('editar')->modalWidth('lg'),
                 Tables\Actions\DeleteAction::make()->label('eliminar'),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
                 Tables\Actions\DeleteBulkAction::make(),
-                ]),
             ]);
     }
 
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListUbicacions::route('/'),
-            //'create' => Pages\CreateUbicacion::route('/create'),
-            //'edit' => Pages\EditUbicacion::route('/{record}/edit'),
+            'index' => Pages\ListCategoriaLocals::route('/'),
+            //'create' => Pages\CreateCategoriaLocal::route('/create'),
+            //'edit' => Pages\EditCategoriaLocal::route('/{record}/edit'),
         ];
     }
 }

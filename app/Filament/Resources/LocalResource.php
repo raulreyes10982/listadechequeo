@@ -20,10 +20,12 @@ class LocalResource extends Resource
 {
     protected static ?string $model = Local::class;
 
+    protected static ?string $navigationLabel = 'Unidad comercial';
+    protected static ?string $pluralLabel = 'Unidad comercial';   // Título en listado
+    protected static ?string $label = 'Unidad comercial';         // Título en singular
     protected static ?string $navigationGroup = 'Localización';
-    protected static ?string $navigationLabel = 'Locales';
     protected static ?string $navigationIcon = 'heroicon-o-map-pin';
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 3;
 
 
     public static function form(Form $form): Form
@@ -33,9 +35,12 @@ class LocalResource extends Resource
                 TextInput::make('nombre')
                     ->label('Nombre del Local')
                     ->required()
+                    ->columnSpanFull()
                     ->maxLength(100),
+
                 Select::make('nomenclatura_id')
                     ->label('Ubicación / Nomenclatura')
+                    ->columnSpanFull()
                     ->relationship('nomenclatura', 'codigo')
                     ->options(\App\Models\Nomenclatura::pluck('codigo', 'id'))
                     ->searchable()
@@ -47,6 +52,11 @@ class LocalResource extends Resource
     {
         return $table
             ->columns([
+                TextColumn::make('nomenclatura.categoriaLocal.descripcion')
+                    ->label('Unidad')
+                    ->alignment('center')
+                    ->searchable()
+                    ->sortable(),
                 TextColumn::make('nomenclatura.codigo')
                     ->label('N°')
                     ->alignment('center')
@@ -95,8 +105,8 @@ class LocalResource extends Resource
     {
         return [
             'index' => Pages\ListLocals::route('/'),
-            'create' => Pages\CreateLocal::route('/create'),
-            'edit' => Pages\EditLocal::route('/{record}/edit'),
+            //'create' => Pages\CreateLocal::route('/create'),
+            //'edit' => Pages\EditLocal::route('/{record}/edit'),
         ];
     }
 }

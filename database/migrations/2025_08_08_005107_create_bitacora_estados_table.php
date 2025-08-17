@@ -9,12 +9,12 @@ return new class extends Migration {
     public function up(): void {
         Schema::create('bitacora_estados', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('reporte_id')->constrained()->onDelete('cascade');
-            $table->foreignId('estado_id')->constrained('estados')->onDelete('restrict');
-            $table->string('descripcion')->nullable();
-            $table->string('registrado_por');
             $table->date('fecha');
             $table->time('hora');
+            $table->string('registrado_por');
+            $table->string('descripcion')->nullable();
+            $table->foreignId('reporte_id')->nullable()->constrained('reportes')->onDelete('set null');
+            $table->foreignId('estado_id')->nullable()->constrained('estados')->onDelete('set null');
             $table->timestamps();
         });
     }

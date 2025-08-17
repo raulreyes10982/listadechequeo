@@ -17,9 +17,9 @@ class PrioridadResource extends Resource
 {
     protected static ?string $model = Prioridad::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-arrow-up';
     protected static ?string $navigationGroup = 'Reportes';
-    protected static ?string $navigationLabel = 'Prioridad';
+    protected static ?string $navigationLabel = 'Prioridad del rerporte';
     protected static ?int $navigationSort = 5;
 
     public static function form(Form $form): Form

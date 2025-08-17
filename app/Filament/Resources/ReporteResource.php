@@ -3,22 +3,22 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ReporteResource\Pages;
-use App\Filament\Resources\ReporteResource\RelationManagers;
-use App\Filament\Resources\ReporteResource\RelationManagers\SeguimientosRelationManager;
 use App\Models\Reporte;
 use App\Models\Zona;
+use App\Models\Estado;
+use App\Models\BitacoraEstado;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\FileUpload;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
-use Filament\Support\Enums\MaxWidth;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\FileUpload;
+use Filament\Tables\Actions\Action;
+use Filament\Tables\Actions\ActionGroup;
+use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
 class ReporteResource extends Resource
@@ -157,7 +157,6 @@ class ReporteResource extends Resource
 
                 Tables\Columns\TextColumn::make('categoria.descripcion')
                     ->label('Reporte')
-                    ->numeric()
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('tipoReporte.descripcion')
@@ -181,27 +180,27 @@ class ReporteResource extends Resource
                 Tables\Columns\TextColumn::make('ubicacion_y_unidad')
                     ->label('Ubicación')
                     ->getStateUsing(function ($record) {
-                        $ubicacion = $record->ubicacion->descripcion ?? '';
+                        $ubicacion = $record->ubicacion?->descripcion ?? '';
                         $unidadPrivada = $record->local?->option_label;
-                        return $unidadPrivada ? "{$ubicacion} Local {$unidadPrivada}" : $ubicacion;
+                        return $unidadPrivada ? "{$ubicacion} {$unidadPrivada}" : $ubicacion;
                     })
                     ->searchable()
                     ->sortable()
                     ->alignment('center'),
 
-                    Tables\Columns\TextColumn::make('estado.descripcion')
-                        ->label('Estado')
-                        ->badge()
-                        ->color(fn ($state) => match ($state) {
-                            'Pendiente'   => 'danger',    // rojo
-                            'En proceso'  => 'warning',   // amarillo
-                            'Verificado'  => 'info',      // azul claro
-                            'Finalizado'  => 'success',   // verde
-                            default       => 'gray',      // gris por defecto
-                        })
-                        ->sortable()
-                        ->searchable()
-                        ->alignment('center'),
+                Tables\Columns\TextColumn::make('estado.descripcion')
+                    ->label('Estado')
+                    ->badge()
+                    ->color(fn ($state) => match ($state) {
+                        'Pendiente'   => 'danger',
+                        'En proceso'  => 'warning',
+                        'Verificado'  => 'info',
+                        'Finalizado'  => 'success',
+                        default       => 'gray',
+                    })
+                    ->sortable()
+                    ->searchable()
+                    ->alignment('center'),
 
                 Tables\Columns\TextColumn::make('descripcion')
                     ->label('Observaciones')
@@ -210,46 +209,91 @@ class ReporteResource extends Resource
                     ->sortable()
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
-                Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->filters([])
             ->actions([
-                Tables\Actions\EditAction::make()
-                    ->label('editar')
-                    ->modalWidth(MaxWidth::FourExtraLarge),
+                ActionGroup::make([
+                    Tables\Actions\EditAction::make()
+                        ->label('Editar')
+                        ->modalWidth('3xl'),
 
-                Tables\Actions\DeleteAction::make()
-                    ->label('eliminar'),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                    Tables\Actions\DeleteAction::make()
+                        ->label('Eliminar'),
+                    /*
+                    // Action original
+                    Action::make('cambiarEstado')
+                        ->label('Cambiar estado')
+                        ->modalWidth('lg')
+                        ->icon('heroicon-o-arrow-path')
+                        ->form([
+                            Select::make('estado_id')
+                                ->label('Nuevo estado')
+                                ->options(Estado::pluck('descripcion', 'id')->toArray())
+                                ->required(),
+                            Textarea::make('descripcion')
+                                ->label('Observaciones')
+                                ->rows(4)
+                                ->required(),
+                        ])
+                        ->action(function (array $data, Action $action) {
+                            $reporte = $action->getRecord();
+                            $reporte->update([
+                                'estado_id' => $data['estado_id'],
+                            ]);
+
+                            Notification::make()
+                                ->title('Estado actualizado')
+                                ->body('El estado del reporte fue cambiado correctamente.')
+                                ->success()
+                                ->send();
+                        }),
+                    */
+                    // Nuevo Action que guarda en BitacoraEstado
+                    Action::make('cambiarEstadoBitacora')
+                        ->label('Cambiar estado')
+                        ->modalWidth('lg')
+                        ->icon('heroicon-o-document-text')
+                        ->form([
+                            Select::make('estado_id')
+                                ->label('Nuevo estado')
+                                ->options(Estado::pluck('descripcion', 'id')->toArray())
+                                ->required(),
+                            Textarea::make('descripcion')
+                                ->label('Observaciones')
+                                ->rows(4)
+                                ->required(),
+                        ])
+                        ->action(function (array $data, Action $action) {
+                            $reporte = $action->getRecord();
+                            /*
+                            // 1️Actualizar el estado en "reportes"
+                            $reporte->update([
+                                'estado_id' => $data['estado_id'],
+                            ]);
+                            */
+                            // Guardar en BitacoraEstado
+                            BitacoraEstado::create([
+                                'reporte_id'   => $reporte->id,
+                                'estado_id'    => $data['estado_id'],
+                                'descripcion'  => $data['descripcion'],
+                                'cambiado_por' => Auth::user()->name ?? 'Sistema',
+                            ]);
+
+                            Notification::make()
+                                ->title('Estado registrado en Bitácora')
+                                ->body('El estado se actualizó y se guardó en la bitácora.')
+                                ->success()
+                                ->send();
+                        }),
+                ])
+                ->button()
+                ->label('Acciones'),
             ]);
-    }
-
-    public static function getRelations(): array
-    {
-        return [
-            
-        ];
     }
 
     public static function getPages(): array
     {
         return [
             'index' => Pages\ListReportes::route('/'),
-            //'create' => Pages\CreateReporte::route('/create'),
-            //'edit' => Pages\EditReporte::route('/{record}/edit'),
         ];
     }
 }

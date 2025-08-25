@@ -65,6 +65,11 @@ class Permiso extends Model
         return $this->belongsTo(Colaborador::class, 'colaborador_id');
     }
 
+    public function trabajadores()
+    {
+        return $this->hasMany(\App\Models\Trabajador::class);
+    }
+
     // Calcular días restantes del permiso
     public function getDiasRestantesAttribute()
     {

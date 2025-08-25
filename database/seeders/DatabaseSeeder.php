@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\CategoriaLocal;
 use App\Models\Prioridad;
+use App\Models\TipoPermiso;
 use App\Models\Ubicacion;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -51,6 +52,7 @@ class DatabaseSeeder extends Seeder
             PrioridadSeeder::class,
             EstadoSeeder::class,
             ReporteSeeder::class,
+            TipoPermiso::class,
         ]);
     }
 }

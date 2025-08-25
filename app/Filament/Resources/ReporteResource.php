@@ -34,7 +34,7 @@ class ReporteResource extends Resource
     {
         return $form
             ->columns(6)
-            ->schema([
+            ->schema([ 
                 Forms\Components\Hidden::make('subidopor'),
 
                 Forms\Components\TimePicker::make('hora')
@@ -128,6 +128,7 @@ class ReporteResource extends Resource
                     ->columnSpan(3)
                     ->visibleOn(['edit', 'view'])
                     ->disabled(),
+                
             ]);
     }
 

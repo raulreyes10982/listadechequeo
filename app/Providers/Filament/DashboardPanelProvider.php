@@ -66,13 +66,14 @@ class DashboardPanelProvider extends PanelProvider
             ->navigationGroups([
                 'User Manager',         
                 'Datos Personales',     
-                'Organización',         
-                'Localización',         
-                'Equipos',              
-                'Permisos',             
+                'Organización',     
+                'Localización',
+                'Programación',    
+                'Permisos',                                               
                 'Reportes',             
-                'Novedades',            
-                'Programación',         
+                'Novedades',
+                'Equipos',
+                
 ])
             ->authMiddleware([
                 Authenticate::class,

@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\GrupoSanguineoResource\Pages;
-use App\Filament\Resources\GrupoSanguineoResource\RelationManagers;
-use App\Models\GrupoSanguineo;
+use App\Filament\Resources\TipoPermisoResource\Pages;
+use App\Filament\Resources\TipoPermisoResource\RelationManagers;
+use App\Models\TipoPermiso;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -13,26 +13,25 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class GrupoSanguineoResource extends Resource
+class TipoPermisoResource extends Resource
 {
-    protected static ?string $model = GrupoSanguineo::class;
+    protected static ?string $model = TipoPermiso::class;
 
-    protected static ?string $navigationGroup = 'Datos Personales';
-    protected static ?string $navigationLabel = 'Grupo Sanguíneo';
-    protected static ?string $navigationIcon = 'heroicon-o-beaker'; // 🧪 ícono de laboratorio
-    protected static ?int $navigationSort = 4;
-
+    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationGroup = 'Permisos';
+    protected static ?string $navigationLabel = 'Tipo Permiso';
+    protected static ?string $pluralLabel = 'Tipo Permiso';   // Título en listado
+    protected static ?string $label = 'Tipo Permiso';         // Título en singular
+    protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
                 Forms\Components\TextInput::make('descripcion')
-                    ->required()
+                    ->rule('unique:tipo_permisos,descripcion')
                     ->columnSpanFull()
-                    ->maxLength(250)
-                    ->rule('unique:generos,descripcion')
-                    ->default(null),
+                    ->required(),
             ]);
     }
 
@@ -75,9 +74,9 @@ class GrupoSanguineoResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListGrupoSanguineos::route('/'),
-            //'create' => Pages\CreateGrupoSanguineo::route('/create'),
-            //'edit' => Pages\EditGrupoSanguineo::route('/{record}/edit'),
+            'index' => Pages\ListTipoPermisos::route('/'),
+            //'create' => Pages\CreateTipoPermiso::route('/create'),
+            //'edit' => Pages\EditTipoPermiso::route('/{record}/edit'),
         ];
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\VerificacionDiaria;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -9,7 +10,6 @@ class Trabajador extends Model
 {
     use HasFactory;
 
-    // Usamos nombre de tabla en plural español
     protected $table = 'trabajadores';
 
     protected $fillable = [
@@ -18,8 +18,36 @@ class Trabajador extends Model
         'nombre',
     ];
 
+    /*
+    |--------------------------------------------------------------------------
+    | Boot Model
+    |--------------------------------------------------------------------------
+    */
+    protected static function booted()
+    {
+        // Cuando se crea un trabajador, generar sus verificaciones
+        static::created(function (Trabajador $t) {
+            $t->permiso?->generarVerificacionesParaTrabajador($t);
+        });
+
+        // Al eliminar un trabajador, eliminar sus verificaciones asociadas
+        static::deleting(function (Trabajador $t) {
+            $t->verificacionesDiarias()->delete();
+        });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Relaciones
+    |--------------------------------------------------------------------------
+    */
     public function permiso()
     {
         return $this->belongsTo(Permiso::class);
+    }
+
+    public function verificacionesDiarias()
+    {
+        return $this->hasMany(VerificacionDiaria::class);
     }
 }

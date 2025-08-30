@@ -13,9 +13,9 @@ class UbicacionSeeder extends Seeder
     {
         $ubicacions = ['Pasillo 1', 'Pasillo 2', 'Pasillo 3', 'Parqueadero zona naranja', 'Parqueadero zona azul', 'baños 2 piso'];
 
-        foreach ($ubicacions as $zona) 
+        foreach ($ubicacions as $ubicacion) 
         {
-            Ubicacion::create(['descripcion' => $zona]);
+            Ubicacion::create(['descripcion' => $ubicacion]);
         }
 
     }

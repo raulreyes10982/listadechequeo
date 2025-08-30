@@ -202,17 +202,6 @@ class PermisoResource extends Resource
                         ?? '-'
                 )
                 ->sortable()
-                ->searchable(),
-
-            TextColumn::make('contratista_o_unidad')
-                ->label('Contratista / Unidad Privada')
-                ->alignment('center')
-                ->getStateUsing(fn ($record) =>
-                    $record->contratistas->descripcion
-                        ?? $record->local->option_label
-                        ?? '-'
-                )
-                ->sortable()
                 ->searchable(query: function ($query, $search) {
                     $query
                         ->whereHas('contratistas', fn ($q) =>

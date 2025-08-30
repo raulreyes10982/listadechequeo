@@ -14,9 +14,9 @@ class TipoPermisoSeeder extends Seeder
     public function run(): void
     {
         $tipopermisos = [
-            'Permiso Interno',
-            'Permiso Externo',
-            'Permiso terceros',
+            'Permiso tercero',
+            'Permiso interno',
+            'Permiso externo',
         ];
 
         foreach ($tipopermisos as $tipopermiso) {

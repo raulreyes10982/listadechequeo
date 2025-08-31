@@ -16,6 +16,6 @@ class ListVerificacionDiarias extends ListRecords
 
     public function getTitle(): string
     {
-        return 'Autorizado'; // como en tu captura
+        return 'Personal autorizado'; // como en tu captura
     }
 }

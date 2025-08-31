@@ -232,7 +232,8 @@ class PermisoResource extends Resource
             TextColumn::make('tipo_actividad')
                 ->label('Tipo de Actividad')
                 ->alignment('center')
-                ->formatStateUsing(fn ($state) => is_array($state) ? implode('<br>', $state) : $state)
+                //->formatStateUsing(fn ($state) => is_array($state) ? implode('<br>', $state) : $state)
+                ->formatStateUsing(fn ($state) => implode('<br>', explode(', ', $state)))
                 ->html()
                 ->sortable()
                 ->searchable(),

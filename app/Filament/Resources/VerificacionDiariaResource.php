@@ -15,10 +15,14 @@ class VerificacionDiariaResource extends Resource
 {
     protected static ?string $model = VerificacionDiaria::class;
 
-    protected static ?string $navigationIcon  = 'heroicon-o-clipboard-document-check';
-    protected static ?string $navigationGroup = 'Permisos';
-    protected static ?string $navigationLabel = 'Verificación diaria';
-    protected static ?int    $navigationSort  = 10;
+    protected static ?string $navigationIcon   = 'heroicon-o-clipboard-document-check';
+    protected static ?string $navigationGroup  = 'Permisos';
+    protected static ?string $modelLabel       = 'Personal autorizado';// singular
+    protected static ?string $pluralModelLabel = 'Personal autorizado';// plural
+    protected static ?string $navigationLabel  = 'Personal autorizado';// menú
+    protected static ?int    $navigationSort   = 3;
+
+    
 
     /*
     |--------------------------------------------------------------------------
@@ -35,6 +39,7 @@ class VerificacionDiariaResource extends Resource
                 Tables\Columns\TextColumn::make('contratista_o_unidad')
                     ->label('Terceros / Unidad Privada')
                     ->alignCenter()
+                    ->sortable()   
                     ->getStateUsing(fn ($record) =>
                         $record->permiso?->contratistas?->descripcion
                         ?? $record->permiso?->local?->option_label
@@ -43,21 +48,32 @@ class VerificacionDiariaResource extends Resource
 
                 Tables\Columns\TextColumn::make('permiso.tipoPermiso.descripcion')
                     ->label('Tipo Permiso')
-                    ->alignCenter(),
+                    ->alignCenter()
+                    ->sortable()   
+                    ->searchable(), 
 
                 Tables\Columns\TextColumn::make('trabajador.nombre')
-                    ->label('Nombre'),
+                    ->label('Nombre')
+                    ->alignCenter()
+                    ->sortable()   
+                    ->searchable(), 
 
                 Tables\Columns\TextColumn::make('trabajador.documento')
-                    ->label('Documento'),
+                    ->label('Documento')
+                    ->alignCenter()
+                    ->sortable()   
+                    ->searchable(), 
 
                 Tables\Columns\TextColumn::make('dias_autorizados')
                     ->label('Días Autorizados')
-                    ->alignCenter(),
+                    ->alignCenter()
+                    ->sortable()   
+                    ->searchable(), 
 
                 Tables\Columns\CheckboxColumn::make('verificado')
                     ->label('Verificación')
-                    ->alignCenter(),
+                    ->alignCenter()
+                    
             ])
             ->filters([])
             ->actions([
@@ -111,4 +127,10 @@ class VerificacionDiariaResource extends Resource
     {
         return true;
     }
+
+    // En App\Models\VerificacionDiaria
+public function scopeVerificados($query)
+{
+    return $query->where('verificado', true);
+}
 }

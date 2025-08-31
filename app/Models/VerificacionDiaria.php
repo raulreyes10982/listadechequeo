@@ -59,6 +59,11 @@ class VerificacionDiaria extends Model
         return $this->belongsTo(Local::class);
     }
 
+    public function contratistas()
+    {
+        return $this->belongsTo(Contratistas::class, 'contratistas_id');
+    }
+
     public function tipoPermiso()
     {
         return $this->belongsTo(TipoPermiso::class);
@@ -121,4 +126,6 @@ class VerificacionDiaria extends Model
             ? 'Vigente'
             : 'Vencido';
     }
+
+    
 }

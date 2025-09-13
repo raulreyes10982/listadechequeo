@@ -3,17 +3,19 @@
 namespace App\Filament\Resources\HistorialVerificacionResource\Pages;
 
 use App\Filament\Resources\HistorialVerificacionResource;
-use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 
-class ListHistorialVerificacions extends ListRecords
+class ListHistorialVerificaciones extends ListRecords
 {
     protected static string $resource = HistorialVerificacionResource::class;
 
     protected function getHeaderActions(): array
     {
-        return [
-            Actions\CreateAction::make(),
-        ];
+        return []; // sin acciones de crear
+    }
+
+    public function getTitle(): string
+    {
+        return 'Personal verificado';
     }
 }

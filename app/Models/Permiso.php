@@ -126,11 +126,9 @@ class Permiso extends Model
 
     public function getTercerosUnidadAttribute(): string
     {
-        $tercero = optional($this->contratista)->descripcion
-                 ?? optional($this->contratistas)->descripcion;
+        $tercero = optional($this->contratista)->descripcion ?? optional($this->contratistas)->descripcion;
 
-        $unidad  = optional($this->local)->option_label
-                 ?? optional($this->local)->descripcion;
+        $unidad  = optional($this->local)->option_label ?? optional($this->local)->descripcion;
 
         return $tercero ?: ($unidad ?: '-');
     }
@@ -177,5 +175,7 @@ class Permiso extends Model
             );
         }
     }
+
+    
 }
 

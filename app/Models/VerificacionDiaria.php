@@ -39,8 +39,28 @@ class VerificacionDiaria extends Model
     */
     protected static function booted(): void
     {
+        // Antes de crear el registro
         static::creating(function ($reporte) {
             $reporte->verificadopor = Auth::user()->name ?? 'Sistema';
+            $reporte->fecha ??= now()->toDateString();
+            $reporte->hora  ??= now()->toTimeString();
+        });
+
+        // Después de guardar, si se marcó como verificado -> crear historial
+        static::saved(function ($verificacion) {
+            if ($verificacion->wasChanged('verificado') && $verificacion->verificado) {
+                \App\Models\HistorialVerificacion::create([
+                    'permiso_id'       => $verificacion->permiso_id,
+                    'trabajador_id'    => $verificacion->trabajador_id,
+                    'nombre'           => $verificacion->nombre,
+                    'documento'        => $verificacion->documento,
+                    'estado'           => $verificacion->estado,
+                    'dias_autorizados' => $verificacion->dias_autorizados,
+                    'verificado'       => $verificacion->verificado,
+                    'fecha'            => $verificacion->fecha ?? now()->toDateString(),
+                    'hora'             => $verificacion->hora  ?? now()->toTimeString(),
+                ]);
+            }
         });
     }
 
@@ -123,9 +143,8 @@ class VerificacionDiaria extends Model
         }
 
         return Carbon::today()->lte(Carbon::parse($fin))
-            ? 'Vigente'
+            ? 'Autorizado'
             : 'Vencido';
     }
-
-    
 }
+

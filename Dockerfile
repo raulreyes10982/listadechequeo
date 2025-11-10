@@ -37,13 +37,10 @@ RUN composer install --no-dev --optimize-autoloader
 RUN npm install && npm run build
 
 # Ajustar permisos requeridos por Laravel
-RUN mkdir -p storage \
-    && mkdir -p bootstrap/cache \
-    && chmod -R 777 storage \
-    && chmod -R 777 bootstrap/cache
+RUN chmod -R 777 storage bootstrap/cache
 
 # Exponer el puerto del servidor
 EXPOSE 80
 
-# Iniciar Laravel usando FrankenPHP
-CMD ["php", "artisan", "octane:start", "--server=frankenphp", "--host=0.0.0.0", "--port=80"]
+# Iniciar Laravel con FrankenPHP sin Octane
+CMD ["frankenphp", "run", "--port=80", "--worker", "public/index.php"]

@@ -1,20 +1,48 @@
+# ---------------------------------------------------------
+# 1. PAQUETES DEL SISTEMA
+# ---------------------------------------------------------
 [phases.setup]
-commands = [
-  "composer self-update"
+aptPkgs = [
+  "libzip-dev",
+  "libpng-dev",
+  "libonig-dev",
+  "libxml2-dev",
+  "libicu-dev"
 ]
 
+# ---------------------------------------------------------
+# 2. INSTALACIÓN DE DEPENDENCIAS
+# ---------------------------------------------------------
+[phases.install]
+cmds = [
+  # Composer sin extensiones faltantes
+  "composer install --no-dev --optimize-autoloader --prefer-dist --ignore-platform-req=ext-intl --ignore-platform-req=ext-zip",
+  
+  # Dependencias Node
+  "npm install"
+]
+
+# ---------------------------------------------------------
+# 3. COMPILAR FRONTEND Y OPTIMIZAR LARAVEL
+# ---------------------------------------------------------
 [phases.build]
-commands = [
-  "composer install --no-dev --prefer-dist --ignore-platform-req=ext-intl --ignore-platform-req=ext-zip",
-  "npm ci",
-  "npm prune --omit=dev --ignore-scripts",
+cmds = [
   "npm run build",
+  "php artisan key:generate --force || true",
   "php artisan optimize",
   "php artisan config:cache",
   "php artisan route:cache",
-  "php artisan view:cache",
-  "php artisan migrate --force"
+  "php artisan view:cache"
 ]
 
+# ---------------------------------------------------------
+# 4. ARCHIVOS A GUARDAR PARA EL ENTORNO DE PRODUCCIÓN
+# ---------------------------------------------------------
+[phases.build.artifacts]
+paths = [ "public/build", "vendor", "bootstrap/cache" ]
+
+# ---------------------------------------------------------
+# 5. SERVIDOR PARA PRODUCCIÓN (FrankenPHP)
+# ---------------------------------------------------------
 [start]
-command = "php artisan serve --host 0.0.0.0 --port $PORT"
+cmd = "frankenphp php-server --root=public --port=$PORT"

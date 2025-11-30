@@ -33,14 +33,13 @@ cmds = [
 ]
 
 # ---------------------------------------------------------
-# 4. ARCHIVOS A GUARDAR PARA EL ENTORNO DE PRODUCCIÓN
+# 4. ARCHIVOS A GUARDAR
 # ---------------------------------------------------------
 [phases.build.artifacts]
 paths = [ "public/build", "vendor", "bootstrap/cache" ]
 
 # ---------------------------------------------------------
-# 5. SERVIDOR PARA PRODUCCIÓN (IGNORADO POR CUSTOM START COMMAND)
-# (lo dejamos comentado)
+# 5. START – IGNORADO (USAMOS CUSTOM START)
 # ---------------------------------------------------------
 # [start]
 # cmd = "frankenphp php-server --root=public --port=$PORT"

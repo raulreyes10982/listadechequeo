@@ -15,10 +15,7 @@ aptPkgs = [
 # ---------------------------------------------------------
 [phases.install]
 cmds = [
-  # Composer sin extensiones faltantes
   "composer install --no-dev --optimize-autoloader --prefer-dist --ignore-platform-req=ext-intl --ignore-platform-req=ext-zip",
-  
-  # Dependencias Node
   "npm install"
 ]
 
@@ -42,7 +39,8 @@ cmds = [
 paths = [ "public/build", "vendor", "bootstrap/cache" ]
 
 # ---------------------------------------------------------
-# 5. SERVIDOR PARA PRODUCCIÓN (FrankenPHP)
+# 5. SERVIDOR PARA PRODUCCIÓN (IGNORADO POR CUSTOM START COMMAND)
+# (lo dejamos comentado)
 # ---------------------------------------------------------
-[start]
-cmd = "frankenphp php-server --root=public --port=$PORT"
+# [start]
+# cmd = "frankenphp php-server --root=public --port=$PORT"

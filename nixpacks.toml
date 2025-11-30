@@ -1,5 +1,10 @@
+[phases.setup]
+commands = [
+  "composer self-update"
+]
+
 [phases.build]
-cmds = [
+commands = [
   "composer install --no-dev --prefer-dist --ignore-platform-req=ext-intl --ignore-platform-req=ext-zip",
   "npm ci",
   "npm prune --omit=dev --ignore-scripts",
@@ -11,5 +16,5 @@ cmds = [
   "php artisan migrate --force"
 ]
 
-[phases.start]
-cmd = "php artisan serve --host=0.0.0.0 --port=$PORT"
+[start]
+command = "php artisan serve --host 0.0.0.0 --port $PORT"

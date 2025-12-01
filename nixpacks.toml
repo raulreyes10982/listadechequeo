@@ -39,7 +39,7 @@ cmds = [
 paths = [ "public/build", "vendor", "bootstrap/cache" ]
 
 # ---------------------------------------------------------
-# 5. START – IGNORADO (USAMOS CUSTOM START)
+# 5. START – ARRANQUE DE FRANKENPHP
 # ---------------------------------------------------------
-# [start]
-# cmd = "frankenphp php-server --root=public --port=$PORT"
+[start]
+cmd = "frankenphp php-server --root=public --port=$PORT"

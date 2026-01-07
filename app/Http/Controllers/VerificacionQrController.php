@@ -9,97 +9,87 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Validator;   
 use Carbon\Carbon;
 
 class VerificacionQrController extends Controller
 {
-    /**
-     * Verificar código QR de manera SEGURA con transacción
-     */
+
     public function verificar(Request $request)
     {
-        // 🔐 1. VERIFICAR AUTENTICACIÓN
-        if (!Auth::check()) {
-            return response()->json([
-                'success' => false,
-                'mensaje' => '❌ No autenticado. Debe iniciar sesión.'
-            ], 401);
-        }
-        
-        // 🔐 2. VERIFICAR PERMISO (si ya tienes Spatie instalado)
-        // if (!Auth::user()->can('scan_qr')) {
-        //     return response()->json([
-        //         'success' => false,
-        //         'mensaje' => '❌ No tiene permiso para escanear QR.'
-        //     ], 403);
-        // }
-
-        // ✅ 3. VALIDACIÓN ESTRICTA DE ENTRADA
-        $validator = Validator::make($request->all(), [
-            'codigo_qr' => 'required|json',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'mensaje' => '❌ Formato inválido. Se espera JSON.',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        // Decodificar el QR
-        $qrData = json_decode($request->input('codigo_qr'), true);
-        
-        if (json_last_error() !== JSON_ERROR_NONE || !is_array($qrData)) {
-            return response()->json([
-                'success' => false, 
-                'mensaje' => '❌ QR con formato JSON inválido.'
-            ], 422);
-        }
-
-        // Validar estructura interna del QR
-        $validatorInterno = Validator::make($qrData, [
-            'codigo' => 'required|string|max:100',
-            'token'  => 'required|string|size:64', // SHA256 = 64 chars
-        ]);
-
-        if ($validatorInterno->fails()) {
-            return response()->json([
-                'success' => false,
-                'mensaje' => '❌ Estructura del QR incorrecta. Faltan campos requeridos.'
-            ], 422);
-        }
-
-        $codigo = trim($qrData['codigo']);
-        $token = trim($qrData['token']);
-        
-        // 🔄 4. TRANSACCIÓN DE BASE DE DATOS (CRÍTICO)
-        return DB::transaction(function () use ($codigo, $token) {
+        // 🔄 TRANSACCIÓN PARA CONSISTENCIA
+        return DB::transaction(function () use ($request) {
             try {
-                // 5. BUSCAR PUESTO
+                // 🔐 1. VERIFICAR AUTENTICACIÓN
+                if (!Auth::check()) {
+                    return response()->json([
+                        'success' => false,
+                        'mensaje' => '❌ No autenticado. Debe iniciar sesión.'
+                    ], 401);
+                }
+
+                // ✅ 2. VALIDACIÓN ESTRICTA DE ENTRADA
+                $validator = Validator::make($request->all(), [
+                    'codigo_qr' => 'required|json',
+                ]);
+
+                if ($validator->fails()) {
+                    return response()->json([
+                        'success' => false,
+                        'mensaje' => '❌ Formato inválido. Se espera JSON.',
+                        'errors' => $validator->errors()
+                    ], 422);
+                }
+
+                // Decodificar el QR
+                $qrData = json_decode($request->input('codigo_qr'), true);
+                
+                if (json_last_error() !== JSON_ERROR_NONE || !is_array($qrData)) {
+                    return response()->json([
+                        'success' => false, 
+                        'mensaje' => '❌ QR con formato JSON inválido.'
+                    ], 422);
+                }
+
+                // Validar estructura interna del QR
+                $validatorInterno = Validator::make($qrData, [
+                    'codigo' => 'required|string|max:100',
+                    'token'  => 'required|string|size:64', // SHA256 = 64 chars
+                ]);
+
+                if ($validatorInterno->fails()) {
+                    return response()->json([
+                        'success' => false,
+                        'mensaje' => '❌ Estructura del QR incorrecta. Faltan campos requeridos.'
+                    ], 422);
+                }
+
+                $codigo = trim($qrData['codigo']);
+                $token = trim($qrData['token']);
+                
+                // 3. BUSCAR PUESTO
                 $puesto = PuestoSeguridad::where('codigo', $codigo)->first();
                 
                 if (!$puesto) {
                     throw new \Exception('Puesto no encontrado en el sistema.');
                 }
                 
-                // 6. VALIDAR TOKEN QR DE MANERA SEGURA
+                // 4. VALIDAR TOKEN QR DE MANERA SEGURA
                 if (!$puesto->validarTokenQr($token)) {
                     throw new \Exception('Token QR inválido o expirado.');
                 }
                 
-                // 7. BUSCAR TURNO ACTIVO PARA ESTE PUESTO
+                // 5. BUSCAR TURNO ACTIVO PARA ESTE PUESTO
                 $turno = $this->buscarTurnoActivo($puesto->id);
                 
                 if (!$turno) {
                     throw new \Exception('No hay turno activo asignado para este puesto.');
                 }
                 
-                // 8. DETERMINAR TIPO DE VERIFICACIÓN
+                // 6. DETERMINAR TIPO DE VERIFICACIÓN
                 $tipo = $this->determinarTipoVerificacion($turno);
                 
-                // 9. CREAR VERIFICACIÓN
+                // 7. CREAR VERIFICACIÓN
                 $verificacion = VerificacionTurno::create([
                     'registrar_turno_id' => $turno->id,
                     'tipo' => $tipo,
@@ -109,7 +99,7 @@ class VerificacionQrController extends Controller
                     'observacion' => "Verificación {$tipo} vía QR - Puesto: {$puesto->codigo}"
                 ]);
                 
-                // 10. LOG PARA AUDITORÍA
+                // 8. LOG PARA AUDITORÍA
                 Log::info('Verificación QR exitosa', [
                     'verificacion_id' => $verificacion->id,
                     'puesto_id' => $puesto->id,
@@ -137,8 +127,8 @@ class VerificacionQrController extends Controller
             } catch (\Exception $e) {
                 // ❌ ERROR - La transacción se revierte automáticamente
                 Log::error('Fallo en verificación QR (transacción revertida): ' . $e->getMessage(), [
-                    'codigo_puesto' => $codigo,
-                    'usuario_id' => Auth::id(),
+                    'codigo_puesto' => $codigo ?? 'N/A',
+                    'usuario_id' => Auth::id() ?? 'N/A',
                     'error' => $e->getMessage()
                 ]);
                 
@@ -150,9 +140,6 @@ class VerificacionQrController extends Controller
         });
     }
     
-    /**
-     * Buscar turno activo para un puesto
-     */
     private function buscarTurnoActivo($puestoId)
     {
         $now = Carbon::now();
@@ -163,22 +150,19 @@ class VerificacionQrController extends Controller
                 // Turno normal (mismo día)
                 $query->where(function($q) use ($now) {
                     $q->whereTime('hora_inicio', '<=', $now->toTimeString())
-                      ->whereTime('hora_fin', '>=', $now->toTimeString());
+                    ->whereTime('hora_fin', '>=', $now->toTimeString());
                 })
                 // Turno nocturno (cruza medianoche)
                 ->orWhere(function($q) use ($now) {
                     $q->whereTime('hora_inicio', '>=', '18:00:00')
-                      ->whereDate('fecha', $now->copy()->subDay()->toDateString())
-                      ->whereTime('hora_fin', '<=', '06:00:00');
+                    ->whereDate('fecha', $now->copy()->subDay()->toDateString())
+                    ->whereTime('hora_fin', '<=', '06:00:00');
                 });
             })
             ->with('colaborador')
             ->first();
     }
     
-    /**
-     * Determinar tipo de verificación
-     */
     private function determinarTipoVerificacion($turno): string
     {
         $verificaciones = $turno->verificaciones()->where('estado', 'verificado')->get();
@@ -199,9 +183,6 @@ class VerificacionQrController extends Controller
         return 'ronda';
     }
     
-    /**
-     * Mensaje amigable por tipo
-     */
     private function getMensajePorTipo(string $tipo): string
     {
         return match($tipo) {
@@ -212,9 +193,6 @@ class VerificacionQrController extends Controller
         };
     }
     
-    /**
-     * API para obtener turno actual (usuario autenticado)
-     */
     public function turnoActual(Request $request)
     {
         if (!Auth::check()) {
@@ -255,9 +233,6 @@ class VerificacionQrController extends Controller
         ]);
     }
     
-    /**
-     * Endpoint para debug (protegido)
-     */
     public function debugQR(Request $request)
     {
         $validator = Validator::make($request->all(), [

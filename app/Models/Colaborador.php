@@ -71,4 +71,9 @@ class Colaborador extends Model
     {
         return $this->belongsTo(GrupoSanguineo::class);
     }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

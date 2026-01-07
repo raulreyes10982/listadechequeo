@@ -20,10 +20,10 @@ class ColaboradorResource extends Resource
 {
     protected static ?string $model = Colaborador::class;
 
-    protected static ?string $navigationGroup = 'User Manager';
+    protected static ?string $navigationGroup = 'Gestión de Usuarios';
     protected static ?string $navigationLabel = 'Colaboradores';
     protected static ?string $navigationIcon = 'heroicon-o-users';
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 3;
 
 
     public static function form(Form $form): Form
@@ -61,6 +61,7 @@ class ColaboradorResource extends Resource
                             Select::make('cargo_id')->label('Cargo')->columnSpan(2)->relationship('cargo', 'descripcion')->searchable()->required()->preload(),
                             TextInput::make('correo_corporativo')->label('Email corporativo')->columnSpan(2)->email()->maxLength(250),
                             Select::make('tipo_contrato_id')->label('Tipo de Contrato')->columnSpan(2)->relationship('tipoContrato', 'descripcion')->searchable()->required() ->preload(),
+                            Select::make('user_id')->label('Usuario del sistema')->columnSpan(2)->relationship('user', 'email')->searchable()->nullable()->placeholder('Sin usuario asignado'),
                             DatePicker::make('fechainiciolab')->columnSpan(2),
                             DatePicker::make('fechafinlab')->label('Fecha de Terminación')->columnSpan(2),
                         ]),

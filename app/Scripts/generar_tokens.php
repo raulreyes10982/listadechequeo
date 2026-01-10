@@ -4,8 +4,8 @@ use App\Models\PuestoSeguridad;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 
-require __DIR__ . '/vendor/autoload.php';
-$app = require_once __DIR__ . '/bootstrap/app.php';
+require __DIR__ . '/../vendor/autoload.php';
+$app$app = require_once __DIR__ . '/../bootstrap/app.php';
 $app->make('Illuminate\Contracts\Console\Kernel')->bootstrap();
 
 echo "🔐 GENERANDO TOKENS QR PARA PUESTOS...\n";

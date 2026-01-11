@@ -80,11 +80,34 @@ class VerificacionTurnoResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('turno.colaborador.nombre')
                     ->label('Colaborador')
+                    ->formatStateUsing(function ($state, $record) {
+                        // Muestra nombre y apellido juntos
+                        if ($record->turno && $record->turno->colaborador) {
+                            return $record->turno->colaborador->nombre . ' ' . $record->turno->colaborador->apellido;
+                        }
+                        return $state ?? 'N/A';
+                    })
                     ->sortable()
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('turno.puestoSeguridad.puesto')
-                    ->label('Puesto'),
+                    ->label('Puesto')
+                    ->formatStateUsing(function ($state, $record) {
+                        // Muestra código - puesto
+                        if ($record->turno && $record->turno->puestoSeguridad) {
+                            $codigo = $record->turno->puestoSeguridad->codigo ?? '';
+                            $puesto = $record->turno->puestoSeguridad->puesto ?? '';
+                            
+                            if (!empty($codigo) && !empty($puesto)) {
+                                return $codigo . ' - ' . $puesto;
+                            } elseif (!empty($puesto)) {
+                                return $puesto;
+                            }
+                        }
+                        return $state ?? 'N/A';
+                    })
+                    ->sortable()
+                    ->searchable(),
 
                 Tables\Columns\TextColumn::make('tipo')
                     ->badge()
@@ -126,7 +149,13 @@ class VerificacionTurnoResource extends Resource
                     ]))
                     ->modalSubmitAction(false)
                     ->modalCancelAction(false),
-            ]);
+            ])
+            
+            // Deshabilitar todas las acciones masivas
+            ->bulkActions([])
+            
+            // Quitar el botón de crear cuando no hay registros
+            ->emptyStateActions([]);
     }
 
     /*
@@ -138,9 +167,32 @@ class VerificacionTurnoResource extends Resource
     {
         return [
             'index' => Pages\ListVerificacionTurnos::route('/'),
-            'create' => Pages\CreateVerificacionTurno::route('/create'),
-            'edit' => Pages\EditVerificacionTurno::route('/{record}/edit'),
+            // Se eliminan las páginas de creación y edición
+            // 'create' => Pages\CreateVerificacionTurno::route('/create'),
+            // 'edit' => Pages\EditVerificacionTurno::route('/{record}/edit'),
         ];
     }
-}
 
+    /*
+    |--------------------------------------------------------------------------
+    | MÉTODOS PARA RESTRINGIR ACCIONES
+    |--------------------------------------------------------------------------
+    */
+    public static function canCreate(): bool
+    {
+        // No permitir crear verificaciones manualmente
+        return false;
+    }
+
+    public static function canEdit($record): bool
+    {
+        // No permitir editar verificaciones
+        return false;
+    }
+
+    public static function canDelete($record): bool
+    {
+        // No permitir eliminar verificaciones
+        return false;
+    }
+}

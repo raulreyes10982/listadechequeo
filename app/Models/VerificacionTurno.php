@@ -52,7 +52,7 @@ class VerificacionTurno extends Model
      */
     public function getPuestoAttribute()
     {
-        return $this->turno->puestoSeguridad ?? null;
+        return $this->puestoSeguridad->codigo - $this->turno->puestoSeguridad  ?? null;
     }
 
     /**
@@ -373,4 +373,8 @@ class VerificacionTurno extends Model
         // y que no hayan expirado
         return $this->estado === 'pendiente' && !$this->estaExpirada();
     }
+
+    
+
+    
 }

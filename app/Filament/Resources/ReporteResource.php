@@ -219,35 +219,7 @@ class ReporteResource extends Resource
 
                     Tables\Actions\DeleteAction::make()
                         ->label('Eliminar'),
-                    /*
-                    // Action original
-                    Action::make('cambiarEstado')
-                        ->label('Cambiar estado')
-                        ->modalWidth('lg')
-                        ->icon('heroicon-o-arrow-path')
-                        ->form([
-                            Select::make('estado_id')
-                                ->label('Nuevo estado')
-                                ->options(Estado::pluck('descripcion', 'id')->toArray())
-                                ->required(),
-                            Textarea::make('descripcion')
-                                ->label('Observaciones')
-                                ->rows(4)
-                                ->required(),
-                        ])
-                        ->action(function (array $data, Action $action) {
-                            $reporte = $action->getRecord();
-                            $reporte->update([
-                                'estado_id' => $data['estado_id'],
-                            ]);
 
-                            Notification::make()
-                                ->title('Estado actualizado')
-                                ->body('El estado del reporte fue cambiado correctamente.')
-                                ->success()
-                                ->send();
-                        }),
-                    */
                     // Nuevo Action que guarda en BitacoraEstado
                     Action::make('cambiarEstadoBitacora')
                         ->label('Cambiar estado')
@@ -265,12 +237,6 @@ class ReporteResource extends Resource
                         ])
                         ->action(function (array $data, Action $action) {
                             $reporte = $action->getRecord();
-                            /*
-                            // 1️Actualizar el estado en "reportes"
-                            $reporte->update([
-                                'estado_id' => $data['estado_id'],
-                            ]);
-                            */
                             // Guardar en BitacoraEstado
                             BitacoraEstado::create([
                                 'reporte_id'   => $reporte->id,

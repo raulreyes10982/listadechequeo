@@ -6,11 +6,60 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Spatie\Permission\Traits\HasRoles;
+use Illuminate\Notifications\Notifiable;
 use Carbon\Carbon;
 
+/**
+ * @property int $id
+ * @property int $registrar_turno_id
+ * @property string $tipo
+ * @property \Illuminate\Support\Carbon|null $hora_verificacion
+ * @property string|null $observacion
+ * @property int|null $verificado_por
+ * @property string $estado
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read mixed $color_estado
+ * @property-read mixed $color_tipo
+ * @property-read mixed $fecha_formateada
+ * @property-read mixed $hora_formateada
+ * @property-read mixed $icono_tipo
+ * @property-read \App\Models\PuestoSeguridad|null $puesto
+ * @property-read \Illuminate\Notifications\DatabaseNotificationCollection<int, \Illuminate\Notifications\DatabaseNotification> $notifications
+ * @property-read int|null $notifications_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \Spatie\Permission\Models\Permission> $permissions
+ * @property-read int|null $permissions_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \Spatie\Permission\Models\Role> $roles
+ * @property-read int|null $roles_count
+ * @property-read \App\Models\RegistrarTurno $turno
+ * @property-read \App\Models\User|null $verificador
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno delDia()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno delPuesto($puestoId)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno delUsuario($usuarioId)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno permission($permissions, $without = false)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno porTipo($tipo)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno role($roles, $guard = null, $without = false)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno verificadas()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno whereEstado($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno whereHoraVerificacion($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno whereObservacion($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno whereRegistrarTurnoId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno whereTipo($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno whereVerificadoPor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno withoutPermission($permissions)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno withoutRole($roles, $guard = null)
+ * @mixin \Eloquent
+ */
 class VerificacionTurno extends Model
 {
-    use HasFactory;
+        use HasFactory, Notifiable;
 
     protected $table = 'verificacion_turnos';
     
@@ -52,7 +101,7 @@ class VerificacionTurno extends Model
      */
     public function getPuestoAttribute()
     {
-        return $this->puestoSeguridad->codigo - $this->turno->puestoSeguridad  ?? null;
+        return $this->puestoSeguridad->codigo ?? null;
     }
 
     /**

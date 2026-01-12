@@ -7,6 +7,41 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 
+/**
+ * @property int $id
+ * @property string $codigo
+ * @property string $puesto
+ * @property \Illuminate\Support\Carbon|null $inicio_hora
+ * @property \Illuminate\Support\Carbon|null $fin_hora
+ * @property string|null $descripcion
+ * @property string|null $qr_token
+ * @property \Illuminate\Support\Carbon|null $qr_expira
+ * @property \Illuminate\Support\Carbon|null $qr_generado_en Fecha y hora en que se generó el token QR
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read string $qr_content
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\RegistrarTurno> $turnos
+ * @property-read int|null $turnos_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\VerificacionTurno> $verificaciones
+ * @property-read int|null $verificaciones_count
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PuestoSeguridad activos()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PuestoSeguridad necesitaQr()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PuestoSeguridad newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PuestoSeguridad newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PuestoSeguridad query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PuestoSeguridad whereCodigo($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PuestoSeguridad whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PuestoSeguridad whereDescripcion($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PuestoSeguridad whereFinHora($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PuestoSeguridad whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PuestoSeguridad whereInicioHora($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PuestoSeguridad wherePuesto($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PuestoSeguridad whereQrExpira($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PuestoSeguridad whereQrGeneradoEn($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PuestoSeguridad whereQrToken($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PuestoSeguridad whereUpdatedAt($value)
+ * @mixin \Eloquent
+ */
 class PuestoSeguridad extends Model
 {
     use HasFactory;

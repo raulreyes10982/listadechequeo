@@ -9,6 +9,51 @@ use Carbon\Carbon;
 use App\Models\VerificacionDiaria;
 use App\Models\Trabajador;
 
+/**
+ * @property int $id
+ * @property string|null $subidopor
+ * @property string $fecha_inicio_trabajo
+ * @property string $fecha_fin_trabajo
+ * @property string|null $descripcion
+ * @property string|null $actividad
+ * @property array<array-key, mixed>|null $tipo_actividad
+ * @property string|null $archivo_pdf
+ * @property int|null $local_id
+ * @property int|null $contratistas_id
+ * @property int|null $tipo_permiso_id
+ * @property int|null $colaborador_id
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\Colaborador|null $colaborador
+ * @property-read \App\Models\Contratistas|null $contratistas
+ * @property-read int|null $dias_autorizados
+ * @property-read mixed $dias_restantes
+ * @property-read string $terceros_unidad
+ * @property-read \App\Models\Local|null $local
+ * @property-read \App\Models\TipoPermiso|null $tipoPermiso
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Trabajador> $trabajadores
+ * @property-read int|null $trabajadores_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, VerificacionDiaria> $verificaciones
+ * @property-read int|null $verificaciones_count
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Permiso newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Permiso newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Permiso query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Permiso whereActividad($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Permiso whereArchivoPdf($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Permiso whereColaboradorId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Permiso whereContratistasId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Permiso whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Permiso whereDescripcion($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Permiso whereFechaFinTrabajo($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Permiso whereFechaInicioTrabajo($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Permiso whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Permiso whereLocalId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Permiso whereSubidopor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Permiso whereTipoActividad($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Permiso whereTipoPermisoId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Permiso whereUpdatedAt($value)
+ * @mixin \Eloquent
+ */
 class Permiso extends Model
 {
     use HasFactory;

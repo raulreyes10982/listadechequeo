@@ -7,6 +7,32 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
+/**
+ * @property int $id
+ * @property string $cambiado_por
+ * @property string $fecha
+ * @property string $hora
+ * @property string|null $descripcion
+ * @property int $reporte_tecnico_id
+ * @property int $estado_reporte_id
+ * @property string|null $created_at
+ * @property string|null $updated_at
+ * @property-read \App\Models\EstadoReporte $estadoReporte
+ * @property-read \App\Models\ReporteTecnico $reporteTecnico
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialEstadoReporte newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialEstadoReporte newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialEstadoReporte query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialEstadoReporte whereCambiadoPor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialEstadoReporte whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialEstadoReporte whereDescripcion($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialEstadoReporte whereEstadoReporteId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialEstadoReporte whereFecha($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialEstadoReporte whereHora($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialEstadoReporte whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialEstadoReporte whereReporteTecnicoId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|HistorialEstadoReporte whereUpdatedAt($value)
+ * @mixin \Eloquent
+ */
 class HistorialEstadoReporte extends Model
 {
     use HasFactory;

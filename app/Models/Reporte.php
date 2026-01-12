@@ -9,6 +9,51 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Carbon\Carbon;
 
+/**
+ * @property int $id
+ * @property string $subidopor
+ * @property \Illuminate\Support\Carbon $fecha
+ * @property \Illuminate\Support\Carbon $hora
+ * @property string $descripcion
+ * @property array<array-key, mixed>|null $imagenes
+ * @property int|null $categoria_reporte_id
+ * @property int|null $tipo_reporte_id
+ * @property int|null $zona_id
+ * @property int|null $ubicacion_id
+ * @property int|null $prioridad_id
+ * @property int|null $estado_id
+ * @property int|null $local_id
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BitacoraEstado> $bitacoras
+ * @property-read int|null $bitacoras_count
+ * @property-read \App\Models\CategoriaReporte|null $categoria
+ * @property-read \App\Models\Estado|null $estado
+ * @property-read \App\Models\Local|null $local
+ * @property-read \App\Models\Prioridad|null $prioridad
+ * @property-read \App\Models\TipoReporte|null $tipoReporte
+ * @property-read \App\Models\Ubicacion|null $ubicacion
+ * @property-read \App\Models\Zona|null $zona
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Reporte newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Reporte newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Reporte query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Reporte whereCategoriaReporteId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Reporte whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Reporte whereDescripcion($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Reporte whereEstadoId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Reporte whereFecha($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Reporte whereHora($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Reporte whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Reporte whereImagenes($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Reporte whereLocalId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Reporte wherePrioridadId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Reporte whereSubidopor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Reporte whereTipoReporteId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Reporte whereUbicacionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Reporte whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Reporte whereZonaId($value)
+ * @mixin \Eloquent
+ */
 class Reporte extends Model
 {
     use HasFactory;

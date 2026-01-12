@@ -7,6 +7,46 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * @property int $id
+ * @property string|null $hora
+ * @property \Illuminate\Support\Carbon|null $fecha
+ * @property string $verificadopor
+ * @property string $nombre
+ * @property string $documento
+ * @property string $estado
+ * @property int|null $dias_autorizados
+ * @property bool $verificado
+ * @property int|null $colaborador_id
+ * @property int|null $permiso_id
+ * @property int|null $trabajador_id
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\Contratistas|null $contratistas
+ * @property-read \App\Models\Local|null $local
+ * @property-read \App\Models\Permiso|null $permiso
+ * @property-read \App\Models\TipoPermiso|null $tipoPermiso
+ * @property-read \App\Models\Trabajador|null $trabajador
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionDiaria hoyNoVerificado()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionDiaria newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionDiaria newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionDiaria query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionDiaria whereColaboradorId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionDiaria whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionDiaria whereDiasAutorizados($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionDiaria whereDocumento($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionDiaria whereEstado($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionDiaria whereFecha($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionDiaria whereHora($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionDiaria whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionDiaria whereNombre($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionDiaria wherePermisoId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionDiaria whereTrabajadorId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionDiaria whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionDiaria whereVerificado($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionDiaria whereVerificadopor($value)
+ * @mixin \Eloquent
+ */
 class VerificacionDiaria extends Model
 {
     use HasFactory;

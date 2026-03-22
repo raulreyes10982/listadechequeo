@@ -15,6 +15,7 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Response;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Auth;
 
 class PuestoSeguridadResource extends Resource
 {
@@ -114,6 +115,8 @@ class PuestoSeguridadResource extends Resource
                 // ✅ Acción para ver QR
                 Tables\Actions\Action::make('viewQr')
                     ->label('Ver QR')
+                    ->visible(fn () => Auth::check() && in_array(Auth::user()->role, ['admin', 'super_admin']))
+                    ->disabled(fn () => !Auth::check() || !in_array(Auth::user()->role, ['admin', 'super_admin']))
                     ->icon('heroicon-o-qr-code')
                     ->modalHeading(fn ($record) => 'Código QR - ' . $record->codigo)
                     ->modalSubmitAction(false)
@@ -131,6 +134,8 @@ class PuestoSeguridadResource extends Resource
                 // ✅ Acción para descargar PDF individual con SVG
                 Tables\Actions\Action::make('downloadPdf')
                     ->label('PDF')
+                    ->visible(fn () => Auth::check() && in_array(Auth::user()->role, ['admin', 'super_admin']))
+                    ->disabled(fn () => !Auth::check() || !in_array(Auth::user()->role, ['admin', 'super_admin']))
                     ->icon('heroicon-o-document-arrow-down')
                     ->action(function ($record) {
                         $record->generarQrSiNecesario();

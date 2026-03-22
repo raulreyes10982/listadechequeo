@@ -153,6 +153,8 @@ class ReporteTecnicoResource extends Resource
 
                     Action::make('cambiarEstado')
                         ->label('Cambiar estado')
+                        ->visible(fn () => Auth::check() && in_array(Auth::user()->role, ['admin', 'super_admin']))
+                        ->disabled(fn () => !Auth::check() || !in_array(Auth::user()->role, ['admin', 'super_admin']))
                         ->modalWidth('lg')
                         ->icon('heroicon-o-arrow-path')
                         ->form([

@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
+use Spatie\Permission\Traits\HasRoles;
 
 /**
  * @property int $id
@@ -49,7 +50,7 @@ use Illuminate\Support\Facades\Auth;
  */
 class VerificacionDiaria extends Model
 {
-    use HasFactory;
+    use HasFactory, HasRoles;
 
     protected $table = 'verificacion_diarias';
 
@@ -186,5 +187,8 @@ class VerificacionDiaria extends Model
             ? 'Autorizado'
             : 'Vencido';
     }
-}
 
+    
+
+    
+}

@@ -23,7 +23,7 @@
     @foreach($puestos as $puesto)
     <div class="puesto">
         <div class="qr-code">
-            <img src="data:image/png;base64,{{ $puesto->qrCode }}" alt="QR Code">
+            <img src="data:{{ ($puesto->qrEsPng ?? false) ? 'image/png' : 'image/svg+xml' }};base64,{{ $puesto->qrCode }}" alt="QR Code">
         </div>
         
         <div class="info">

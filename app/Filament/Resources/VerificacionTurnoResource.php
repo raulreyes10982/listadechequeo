@@ -167,7 +167,7 @@ class VerificacionTurnoResource extends Resource
                         $userModel = User::with('roles')->find($user->id);
                         
                         if (method_exists($userModel, 'hasRole')) {
-                            $esAdmin = $userModel->hasRole(['admin', 'super_admin']);
+                            $esAdmin = $userModel->hasRole(['administrador', 'super_admin']);
                         } elseif ($userModel->roles) {
                             $esAdmin = $userModel->roles->whereIn('name', ['admin', 'super_admin'])->isNotEmpty();
                         } elseif (isset($userModel->role)) {
@@ -257,7 +257,7 @@ class VerificacionTurnoResource extends Resource
         
         // Método 1: Verificar con hasRole (si existe el método)
         if (method_exists($userWithRoles, 'hasRole')) {
-            $esAdmin = $userWithRoles->hasRole(['admin', 'super_admin']);
+            $esAdmin = $userWithRoles->hasRole(['administrador', 'super_admin']);
         }
         // Método 2: Verificar con relación roles
         elseif ($userWithRoles->roles) {

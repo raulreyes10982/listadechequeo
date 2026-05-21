@@ -11,6 +11,7 @@ use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -59,16 +60,19 @@ class DashboardPanelProvider extends PanelProvider
                 Authenticate::class,
             ])
             ->navigationGroups([
-                'Gestión de Usuarios',       
-                'Datos Personales',     
-                'Organización',     
+                'Gestión de Usuarios',
+                'Datos Personales',
+                'Organización',
                 'Localización',
-                'Programación',    
-                'Permisos',                                               
-                'Reportes',             
+                'Programación',
+                'Permisos',
+                'Reportes',
                 'Novedades',
                 'Equipos',
-                
-            ]);
+            ])
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn (): string => view('filament.components.qr-scanner-alpine')->render(),
+            );
     }
 }

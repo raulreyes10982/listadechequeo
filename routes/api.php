@@ -67,9 +67,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
         ]);
     });
     
-    // 📍 VERIFICACIÓN QR (solo usuarios que pueden escanear)
+    // 📍 VERIFICACIÓN QR (app móvil con token Sanctum)
     Route::post('/verificar-qr', [VerificacionQrController::class, 'verificar'])
         ->name('api.verificar.qr');
+
+    Route::get('/turno-actual', [VerificacionQrController::class, 'turnoActual'])
+        ->name('api.turno.actual');
     
     // 🚪 LOGOUT
     Route::post('/logout', function (Request $request) {

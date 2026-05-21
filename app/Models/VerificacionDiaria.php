@@ -1,52 +1,13 @@
-<?php 
+<?php
 
 namespace App\Models;
 
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Auth;
 
-/**
- * @property int $id
- * @property string|null $hora
- * @property \Illuminate\Support\Carbon|null $fecha
- * @property string $verificadopor
- * @property string $nombre
- * @property string $documento
- * @property string $estado
- * @property int|null $dias_autorizados
- * @property bool $verificado
- * @property int|null $colaborador_id
- * @property int|null $permiso_id
- * @property int|null $trabajador_id
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\Contratistas|null $contratistas
- * @property-read \App\Models\Local|null $local
- * @property-read \App\Models\Permiso|null $permiso
- * @property-read \App\Models\TipoPermiso|null $tipoPermiso
- * @property-read \App\Models\Trabajador|null $trabajador
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionDiaria hoyNoVerificado()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionDiaria newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionDiaria newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionDiaria query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionDiaria whereColaboradorId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionDiaria whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionDiaria whereDiasAutorizados($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionDiaria whereDocumento($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionDiaria whereEstado($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionDiaria whereFecha($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionDiaria whereHora($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionDiaria whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionDiaria whereNombre($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionDiaria wherePermisoId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionDiaria whereTrabajadorId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionDiaria whereUpdatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionDiaria whereVerificado($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionDiaria whereVerificadopor($value)
- * @mixin \Eloquent
- */
 class VerificacionDiaria extends Model
 {
     use HasFactory;
@@ -68,77 +29,50 @@ class VerificacionDiaria extends Model
     ];
 
     protected $casts = [
-        'fecha'      => 'date',
+        'fecha' => 'date',
         'verificado' => 'boolean',
     ];
 
-    /*
-    |--------------------------------------------------------------------------
-    | Boot Model
-    |--------------------------------------------------------------------------
-    */
     protected static function booted(): void
     {
-        // Antes de crear el registro
-        static::creating(function ($reporte) {
-            $reporte->verificadopor = Auth::user()->name ?? 'Sistema';
-            $reporte->fecha ??= now()->toDateString();
-            $reporte->hora  ??= now()->toTimeString();
+        static::creating(function ($verificacion) {
+            $verificacion->verificadopor = Auth::user()->name ?? 'Sistema';
+            $verificacion->fecha ??= now()->toDateString();
+            $verificacion->hora ??= now()->toTimeString();
         });
 
-        // Después de guardar, si se marcó como verificado -> crear historial
         static::saved(function ($verificacion) {
             if ($verificacion->wasChanged('verificado') && $verificacion->verificado) {
-                \App\Models\HistorialVerificacion::create([
-                    'permiso_id'       => $verificacion->permiso_id,
-                    'trabajador_id'    => $verificacion->trabajador_id,
-                    'nombre'           => $verificacion->nombre,
-                    'documento'        => $verificacion->documento,
-                    'estado'           => $verificacion->estado,
+                HistorialVerificacion::create([
+                    'permiso_id' => $verificacion->permiso_id,
+                    'trabajador_id' => $verificacion->trabajador_id,
+                    'nombre' => $verificacion->nombre,
+                    'documento' => $verificacion->documento,
+                    'estado' => $verificacion->estado,
                     'dias_autorizados' => $verificacion->dias_autorizados,
-                    'verificado'       => $verificacion->verificado,
-                    'fecha'            => $verificacion->fecha ?? now()->toDateString(),
-                    'hora'             => $verificacion->hora  ?? now()->toTimeString(),
+                    'verificado' => $verificacion->verificado,
+                    'fecha' => $verificacion->fecha ?? now()->toDateString(),
+                    'hora' => $verificacion->hora ?? now()->toTimeString(),
                 ]);
             }
         });
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Relaciones
-    |--------------------------------------------------------------------------
-    */
-    public function permiso()
+    public function permiso(): BelongsTo
     {
         return $this->belongsTo(Permiso::class);
     }
 
-    public function local()
-    {
-        return $this->belongsTo(Local::class);
-    }
-
-    public function contratistas()
-    {
-        return $this->belongsTo(Contratistas::class, 'contratistas_id');
-    }
-
-    public function tipoPermiso()
-    {
-        return $this->belongsTo(TipoPermiso::class);
-    }
-
-    public function trabajador()
+    public function trabajador(): BelongsTo
     {
         return $this->belongsTo(Trabajador::class);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Scopes
-    |--------------------------------------------------------------------------
-    */
+    public function colaborador(): BelongsTo
+    {
+        return $this->belongsTo(Colaborador::class);
+    }
+
     public function scopeHoyNoVerificado($query)
     {
         return $query
@@ -146,15 +80,15 @@ class VerificacionDiaria extends Model
             ->where('verificado', false);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Accesores
-    |--------------------------------------------------------------------------
-    */
+    public function scopeVerificados($query)
+    {
+        return $query->where('verificado', true);
+    }
+
     /**
-     * Días autorizados restantes (desde hoy hasta fecha fin_trabajo inclusivo).
+     * Días autorizados restantes (calculado desde el permiso).
      */
-    public function getDiasAutorizadosAttribute()
+    public function getDiasRestantesAttribute(): ?int
     {
         $fin = optional($this->permiso)->fecha_fin_trabajo
             ? Carbon::parse($this->permiso->fecha_fin_trabajo)->startOfDay()
@@ -164,17 +98,16 @@ class VerificacionDiaria extends Model
             return null;
         }
 
-        $hoy  = Carbon::today();
+        $hoy = Carbon::today();
         $diff = $hoy->diffInDays($fin, false);
 
-        // Inclusivo: si hoy es el último día, muestra 1
-        return $diff >= 0 ? $diff + 1 : $diff; // negativos = vencido
+        return $diff >= 0 ? $diff + 1 : $diff;
     }
 
     /**
-     * Estado dinámico: 'Vigente' o 'Vencido' según fecha_fin_trabajo.
+     * Estado dinámico según fecha de fin del permiso.
      */
-    public function getEstadoAttribute($value)
+    public function getEstadoAttribute($value): string
     {
         $fin = $this->permiso?->fecha_fin_trabajo;
 
@@ -187,4 +120,3 @@ class VerificacionDiaria extends Model
             : 'Vencido';
     }
 }
-

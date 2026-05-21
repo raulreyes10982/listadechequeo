@@ -64,11 +64,10 @@ class VerificacionDiariaResource extends Resource
                     ->sortable()   
                     ->searchable(), 
 
-                Tables\Columns\TextColumn::make('dias_autorizados')
+                Tables\Columns\TextColumn::make('dias_restantes')
                     ->label('Días Autorizados')
                     ->alignCenter()
-                    ->sortable()   
-                    ->searchable(), 
+                    ->sortable(false),
 
                 Tables\Columns\CheckboxColumn::make('verificado')
                     ->label('Verificación')
@@ -104,10 +103,11 @@ class VerificacionDiariaResource extends Resource
         }
 
         $record->update([
-            'verificado'    => true,
-            'fecha'         => now()->toDateString(),
-            'hora'          => now()->toTimeString(),
+            'verificado' => true,
+            'fecha' => now()->toDateString(),
+            'hora' => now()->toTimeString(),
             'verificadopor' => Auth::user()->name ?? 'Sistema',
+            'dias_autorizados' => $record->dias_restantes,
         ]);
     }
 
@@ -127,10 +127,4 @@ class VerificacionDiariaResource extends Resource
     {
         return true;
     }
-
-    // En App\Models\VerificacionDiaria
-public function scopeVerificados($query)
-{
-    return $query->where('verificado', true);
-}
 }

@@ -57,13 +57,14 @@ class ColaboradorResource extends Resource
                     Step::make('Información Laboral')
                         ->schema([
                             Select::make('departamento_id')->label('Departamento')->columnSpan(2)->relationship('departamento', 'descripcion')->searchable()->required()->preload(),
-                            Select::make('area_id')->label('Área')->columnSpan(2)->relationship('area', 'descripcion')->searchable()->required()->preload(),
-                            Select::make('cargo_id')->label('Cargo')->columnSpan(2)->relationship('cargo', 'descripcion')->searchable()->required()->preload(),
-                            TextInput::make('correo_corporativo')->label('Email corporativo')->columnSpan(2)->email()->maxLength(250),
-                            Select::make('tipo_contrato_id')->label('Tipo de Contrato')->columnSpan(2)->relationship('tipoContrato', 'descripcion')->searchable()->required() ->preload(),
-                            Select::make('user_id')->label('Usuario del sistema')->columnSpan(2)->relationship('user', 'email')->searchable()->nullable()->placeholder('Sin usuario asignado'),
-                            DatePicker::make('fechainiciolab')->columnSpan(2),
+                            Select::make('area_id')->label('Área')->columnSpan(3)->relationship('area', 'descripcion')->searchable()->required()->preload(),
+                            Select::make('cargo_id')->label('Cargo')->columnSpan(3)->relationship('cargo', 'descripcion')->searchable()->required()->preload(),
+                            Select::make('tipo_contrato_id')->label('Tipo de Contrato')->columnSpan(4)->relationship('tipoContrato', 'descripcion')->searchable()->required() ->preload(),
                             DatePicker::make('fechafinlab')->label('Fecha de Terminación')->columnSpan(2),
+                            DatePicker::make('fechainiciolab')->columnSpan(2),
+                            Select::make('user_id')->label('Usuario del sistema')->columnSpan(4)->relationship('user', 'email')->searchable()->nullable()->placeholder('Sin usuario asignado'),
+                            TextInput::make('correo_corporativo')->label('Email corporativo')->columnSpan(4)->email()->maxLength(250),
+
                         ]),
                 ])
                 ->columns(8)

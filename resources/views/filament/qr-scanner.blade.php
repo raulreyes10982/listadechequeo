@@ -1,62 +1,23 @@
-<!-- 📸 Escáner QR -->
-<div 
-    x-data="qrScanner()"
-    x-init="iniciarScanner()"
+{{-- Escáner QR: cámara web en PC, cámara trasera en móvil --}}
+@php
+    $verifyUrl = $verifyUrl ?? route('verificaciones.qr');
+    $verificacionId = $verificacionId ?? null;
+    $readerId = 'qr-reader-' . ($verificacionId ?? uniqid());
+@endphp
+
+<div
+    wire:ignore
+    x-data="qrScanner({
+        verifyUrl: @js($verifyUrl),
+        verificacionId: @js($verificacionId),
+        readerId: @js($readerId),
+    })"
     class="text-center"
 >
-    <div id="reader" style="width:100%; height:300px; border-radius:8px; overflow:hidden;"></div>
-    <p class="text-gray-500 text-sm mt-3">
-        📷 Apunta la cámara al código QR del puesto de seguridad
-    </p>
+    <div id="{{ $readerId }}" class="w-full min-h-[280px] rounded-lg overflow-hidden bg-gray-900"></div>
+
+    <p x-show="!mensajeError" class="text-gray-500 text-sm mt-3" x-text="mensajeCamara"></p>
+    <p x-show="mensajeError" class="text-red-600 text-sm mt-3" x-text="mensajeError"></p>
+
+    <p x-show="procesando" class="text-blue-600 text-sm mt-2">Verificando código...</p>
 </div>
-
-<!-- ✅ Librerías necesarias -->
-<script src="https://unpkg.com/html5-qrcode" defer></script>
-<script src="https://unpkg.com/alpinejs" defer></script>
-
-<script>
-function qrScanner() {
-    return {
-        iniciarScanner() {
-            // Esperar que la librería esté lista
-            if (typeof Html5Qrcode === "undefined") {
-                console.error("La librería html5-qrcode no se cargó correctamente.");
-                return;
-            }
-
-            const scanner = new Html5Qrcode("reader");
-
-            scanner.start(
-                { facingMode: "environment" },
-                { fps: 10, qrbox: 250 },
-                decodedText => {
-                    // ✅ Código QR detectado
-                    alert('Código detectado: ' + decodedText);
-
-                    // Detener escáner
-                    scanner.stop().then(() => {
-                        console.log("Escaneo detenido correctamente");
-                    });
-
-                    // Aquí podrías llamar tu endpoint Laravel
-                    // Ejemplo con fetch:
-                    fetch("/api/verificar-qr", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "Authorization": `Bearer ${localStorage.getItem('token')}`
-                        },
-                        body: JSON.stringify({ codigo: decodedText })
-                    })
-                    .then(r => r.json())
-                    .then(data => alert(data.mensaje))
-                    .catch(err => alert("Error: " + err));
-                },
-                error => {
-                    console.warn(error);
-                }
-            );
-        }
-    }
-}
-</script>

@@ -4,14 +4,16 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\RegistrarTurnoResource\Pages;
 use App\Models\RegistrarTurno;
-use Filament\Forms;
+use Carbon\Carbon;
 use Filament\Forms\Form;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\TimePicker;
+use Filament\Forms\Components\Textarea;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Forms\Components\Select;
 use Illuminate\Database\Eloquent\Builder;
-
 
 class RegistrarTurnoResource extends Resource
 {
@@ -25,140 +27,155 @@ class RegistrarTurnoResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-            ->columns(4)
+            ->columns(6)
             ->schema([
+
+                // Puesto de seguridad
                 Select::make('puesto_seguridad_id')
                     ->label('Puesto de Seguridad')
-                    ->relationship('puestoSeguridad', 'puesto') 
-                    ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->codigo} - {$record->puesto}")
+                    ->relationship('puestoSeguridad', 'puesto')
+                    ->getOptionLabelFromRecordUsing(
+                        fn ($record) => "{$record->codigo} - {$record->puesto}"
+                    )
                     ->searchable()
-                    ->columnSpan(2)
-                    ->preload() //  esto ayuda a que cargue los registros inmediatamente
-                    ->required(),
+                    ->preload()
+                    ->required()
+                    ->columnSpan(3),
 
+                // Colaborador
                 Select::make('colaborador_id')
-                    ->label('Colabordor')
+                    ->label('Colaborador')
                     ->relationship('colaborador', 'nombre')
-                    ->getOptionLabelFromRecordUsing(fn ($record) => $record->nombre . ' ' . $record->apellido)
+                    ->getOptionLabelFromRecordUsing(
+                        fn ($record) => "{$record->nombre} {$record->apellido}"
+                    )
                     ->searchable()
+                    ->preload()
                     ->required()
-                    ->columnSpan(2)
-                    ->preload(),
+                    ->columnSpan(3),
 
-                Forms\Components\DateTimePicker::make('hora_inicio')
-                    ->label('Hora inicio')
-                    ->seconds(false)
-                    ->required()
-                    ->seconds(false)
-                    ->columnSpan(2)
-                    ->displayFormat('H:i')
-                    ->native(false),
-
-                Forms\Components\DateTimePicker::make('hora_fin')
-                    ->label('Hora fin')
-                    ->seconds(false)
-                    ->required()
-                    ->seconds(false)
-                    ->columnSpan(2)
-                    ->displayFormat('H:i')
-                    ->native(false),
-                
-                Forms\Components\DatePicker::make('fecha')
+                // Fecha del turno
+                DatePicker::make('fecha')
                     ->label('Fecha')
-                    //->default(now())
-                    //->minDate(now()) // no deja elegir días anteriores
-                    ->required(),
+                    ->format('Y-m-d')
+                    ->native(false)
+                    ->default(Carbon::now()->format('Y-m-d'))
+                    ->required()
+                    ->columnSpan(2),
 
-                Forms\Components\Textarea::make('observacion')
+                // Hora inicio
+                TimePicker::make('hora_inicio')
+                    ->label('Hora inicio turno')
+                    ->required()
+                    ->seconds(false)
+                    ->displayFormat('H:i')
+                    ->native(false)
+                    ->minutesStep(1)
+                    ->columnSpan(2),
+
+                // Hora fin
+                TimePicker::make('hora_fin')
+                    ->label('Hora finaliza turno')
+                    ->required()
+                    ->seconds(false)
+                    ->displayFormat('H:i')
+                    ->native(false)
+                    ->minutesStep(1)
+                    ->columnSpan(2),
+
+                // Observaciones
+                Textarea::make('observacion')
                     ->label('Observación')
-                    ->columnSpanFull()
-                     ->rows(4)
-                    ->nullable(),
+                    ->rows(4)
+                    ->nullable()
+                    ->columnSpanFull(),
             ]);
     }
 
     public static function table(Table $table): Table
-{
-    return $table
-        ->columns([
-            Tables\Columns\TextColumn::make('puestoSeguridad')
-                ->label('Puesto de Seguridad')
-                ->getStateUsing(fn ($record) => "{$record->puestoSeguridad->codigo} - {$record->puestoSeguridad->puesto}")
-                ->sortable()
-                ->alignment('center')
-                ->searchable(),
+    {
+        return $table
+            ->columns([
 
-            Tables\Columns\TextColumn::make('colaborador')
-                ->label('Colaborador')
-                ->getStateUsing(fn ($record) => "{$record->colaborador->nombre} {$record->colaborador->apellido}")
-                ->sortable()
-                ->alignment('center')
-                ->searchable(),
-
-            Tables\Columns\TextColumn::make('fecha')
-                ->label('Fecha')
-                ->date('d/m/Y')
-                ->alignment('center')
-                ->sortable(),
-
-            Tables\Columns\TextColumn::make('hora_inicio')
-                ->label('Hora inicio')
-                ->time('H:i') // formato 24h
-                ->alignment('center')
-                ->sortable(),
-
-            Tables\Columns\TextColumn::make('hora_fin')
-                ->label('Hora fin')
-                ->time('H:i') // formato 24h
-                ->alignment('center')
-                ->sortable(),
-
-            Tables\Columns\TextColumn::make('observacion')
-                ->label('Observación')
-                ->limit(30)
-                ->alignment('center')
-                ->tooltip(fn ($record) => $record->observacion)
-                ->toggleable(isToggledHiddenByDefault: true),
-
-            Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-
-            Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-        ])
-        ->filters([
-            Tables\Filters\Filter::make('fecha')
-                ->form([
-                    Forms\Components\DatePicker::make('fecha'),
-                ])
-                ->query(fn (Builder $query, array $data) => 
-                    $query->when(
-                        $data['fecha'],
-                        fn (Builder $query, $date) => $query->whereDate('fecha', $date),
+                Tables\Columns\TextColumn::make('puestoSeguridad')
+                    ->label('Puesto de Seguridad')
+                    ->getStateUsing(
+                        fn ($record) => "{$record->puestoSeguridad->codigo} - {$record->puestoSeguridad->puesto}"
                     )
-                ),
-        ])
-        ->actions([
-            //Tables\Actions\ViewAction::make(),
-            Tables\Actions\EditAction::make()->label('editar'),
-            Tables\Actions\DeleteAction::make()->label('eliminar'),
-        ])
-        ->bulkActions([
-            Tables\Actions\DeleteBulkAction::make(),
-        ]);
-}
+                    ->sortable()
+                    ->searchable()
+                    ->alignment('center'),
 
+                Tables\Columns\TextColumn::make('colaborador')
+                    ->label('Colaborador')
+                    ->getStateUsing(
+                        fn ($record) => "{$record->colaborador->nombre} {$record->colaborador->apellido}"
+                    )
+                    ->sortable()
+                    ->searchable()
+                    ->alignment('center'),
+
+                Tables\Columns\TextColumn::make('fecha')
+                    ->label('Fecha')
+                    ->date('d/m/Y')
+                    ->sortable()
+                    ->alignment('center'),
+
+                Tables\Columns\TextColumn::make('hora_inicio')
+                    ->label('Hora inicio')
+                    ->time('H:i')
+                    ->sortable()
+                    ->alignment('center'),
+
+                Tables\Columns\TextColumn::make('hora_fin')
+                    ->label('Hora fin')
+                    ->time('H:i')
+                    ->sortable()
+                    ->alignment('center'),
+
+                Tables\Columns\TextColumn::make('observacion')
+                    ->label('Observación')
+                    ->limit(30)
+                    ->tooltip(fn ($record) => $record->observacion)
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('created_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+            ])
+            ->filters([
+                Tables\Filters\Filter::make('fecha')
+                    ->form([
+                        DatePicker::make('fecha'),
+                    ])
+                    ->query(
+                        fn (Builder $query, array $data) =>
+                            $query->when(
+                                $data['fecha'],
+                                fn (Builder $query, $date) =>
+                                    $query->whereDate('fecha', $date)
+                            )
+                    ),
+            ])
+            ->actions([
+                Tables\Actions\EditAction::make()->label('Editar'),
+                Tables\Actions\DeleteAction::make()->label('Eliminar'),
+            ])
+            ->bulkActions([
+                Tables\Actions\DeleteBulkAction::make(),
+            ]);
+    }
 
     public static function getPages(): array
     {
         return [
             'index' => Pages\ListRegistrarTurnos::route('/'),
-            //'create' => Pages\CreateRegistrarTurno::route('/create'),
-            //s'edit' => Pages\EditRegistrarTurno::route('/{record}/edit'),
         ];
     }
 }

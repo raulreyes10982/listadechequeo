@@ -166,7 +166,7 @@ function turnoStatus() {
         
         async cargarTurnoActual() {
             try {
-                const response = await fetch('/api/turno-actual', {
+                const response = await fetch('/turnos/actual', {
                     headers: {
                         'Accept': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
@@ -232,8 +232,9 @@ function turnoStatus() {
                     supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_QR]
                 };
                 
+                const camara = await this.resolverCamara();
                 await this.scanner.start(
-                    { facingMode: "environment" },
+                    camara,
                     config,
                     this.onScanSuccess.bind(this),
                     this.onScanFailure.bind(this)
@@ -242,10 +243,43 @@ function turnoStatus() {
                 this.escaneando = false;
                 
             } catch (error) {
-                console.error('Error iniciando scanner:', error);
-                alert('Error al iniciar la cámara. Verifica los permisos.');
-                this.cerrarScanner();
+                console.warn('Reintento con cámara alternativa:', error);
+                try {
+                    const cameras = await Html5Qrcode.getCameras();
+                    if (!cameras?.length) throw error;
+                    await this.scanner.start(
+                        cameras[0].id,
+                        config,
+                        this.onScanSuccess.bind(this),
+                        this.onScanFailure.bind(this)
+                    );
+                    this.escaneando = false;
+                } catch (e) {
+                    console.error('Error iniciando scanner:', e);
+                    alert('Error al iniciar la cámara. Verifica los permisos.');
+                    this.cerrarScanner();
+                }
             }
+        },
+
+        esDispositivoMovil() {
+            const ua = navigator.userAgent || '';
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua)
+                || (navigator.maxTouchPoints > 1 && window.matchMedia('(max-width: 768px)').matches);
+        },
+
+        async resolverCamara() {
+            if (this.esDispositivoMovil()) {
+                return { facingMode: 'environment' };
+            }
+            const cameras = await Html5Qrcode.getCameras();
+            if (!cameras?.length) {
+                return { facingMode: 'user' };
+            }
+            const webcam = cameras.find(c =>
+                /front|user|face|integrated|webcam|hd|usb/i.test(c.label || '')
+            ) || cameras[0];
+            return webcam.id;
         },
         
         async onScanSuccess(decodedText) {
@@ -258,14 +292,16 @@ function turnoStatus() {
                 }
                 
                 // Verificar el código QR
-                const response = await fetch('/api/verificar-qr', {
+                const response = await fetch('/verificaciones/qr', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                        'Accept': 'application/json'
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
                     },
-                    body: JSON.stringify({ codigo: decodedText })
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ codigo_qr: decodedText })
                 });
                 
                 const result = await response.json();

@@ -75,6 +75,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Colaborador extends Model
 {
     protected $fillable = [
+        'user_id',
         'nombre',
         'apellido',
         'celular',

@@ -1,22 +1,28 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\VerificacionQrController;
+use Illuminate\Support\Facades\Route;
 
-// 🔐 RUTAS PROTEGIDAS POR AUTENTICACIÓN
-Route::middleware(['auth:sanctum'])->group(function () {
-    
-    // VERIFICACIÓN QR (solo guardias, supervisores y admin)
+Route::redirect('/', '/dashboard');
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/puestos/{puesto}/qr/descargar', function (\App\Models\PuestoSeguridad $puesto) {
+        abort_unless(
+            \App\Filament\Resources\PuestoSeguridadResource::puedeGestionarQr(),
+            403
+        );
+
+        return \App\Filament\Resources\PuestoSeguridadResource::descargarQrImagen($puesto);
+    })->name('puestos.qr.descargar');
     Route::post('/verificaciones/qr', [VerificacionQrController::class, 'verificar'])
-        ->name('api.verificar.qr');
-         // ->middleware('permission:scan_qr'); // Descomentar cuando tengas Spatie
-    
-    // TURNO ACTUAL DEL USUARIO
+        ->name('verificaciones.qr');
+
     Route::get('/turnos/actual', [VerificacionQrController::class, 'turnoActual'])
-        ->name('api.turno.actual');
-    
-    // DEBUG QR (limitado a 10 intentos por minuto)
-    Route::post('/debug/qr', [VerificacionQrController::class, 'debugQR'])
-        ->name('api.debug.qr')
-        ->middleware('throttle:10,1'); // 10 intentos por minuto
+        ->name('turnos.actual');
+
+    if (app()->environment('local')) {
+        Route::post('/debug/qr', [VerificacionQrController::class, 'debugQR'])
+            ->name('debug.qr')
+            ->middleware('throttle:10,1');
+    }
 });

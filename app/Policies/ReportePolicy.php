@@ -11,7 +11,7 @@ class ReportePolicy
     use HandlesAuthorization;
 
     /**
-     * Determinar si el usuario puede ver cualquier modelo.
+     * Determine whether the user can view any models.
      */
     public function viewAny(User $user): bool
     {
@@ -19,7 +19,7 @@ class ReportePolicy
     }
 
     /**
-     * Determinar si el usuario puede ver el modelo.
+     * Determine whether the user can view the model.
      */
     public function view(User $user, Reporte $reporte): bool
     {
@@ -27,7 +27,7 @@ class ReportePolicy
     }
 
     /**
-     * Determinar si el usuario puede crear modelos.
+     * Determine whether the user can create models.
      */
     public function create(User $user): bool
     {
@@ -35,7 +35,7 @@ class ReportePolicy
     }
 
     /**
-     * Determinar si el usuario puede actualizar el modelo.
+     * Determine whether the user can update the model.
      */
     public function update(User $user, Reporte $reporte): bool
     {
@@ -43,7 +43,7 @@ class ReportePolicy
     }
 
     /**
-     * Determinar si el usuario puede eliminar el modelo.
+     * Determine whether the user can delete the model.
      */
     public function delete(User $user, Reporte $reporte): bool
     {
@@ -51,7 +51,7 @@ class ReportePolicy
     }
 
     /**
-     * Determinar si el usuario puede eliminar múltiples registros.
+     * Determine whether the user can bulk delete.
      */
     public function deleteAny(User $user): bool
     {
@@ -59,7 +59,7 @@ class ReportePolicy
     }
 
     /**
-     * Determinar si el usuario puede eliminar permanentemente el modelo.
+     * Determine whether the user can permanently delete.
      */
     public function forceDelete(User $user, Reporte $reporte): bool
     {
@@ -67,7 +67,7 @@ class ReportePolicy
     }
 
     /**
-     * Determinar si el usuario puede eliminar permanentemente múltiples registros.
+     * Determine whether the user can permanently bulk delete.
      */
     public function forceDeleteAny(User $user): bool
     {
@@ -75,7 +75,7 @@ class ReportePolicy
     }
 
     /**
-     * Determinar si el usuario puede restaurar el modelo.
+     * Determine whether the user can restore.
      */
     public function restore(User $user, Reporte $reporte): bool
     {
@@ -83,7 +83,7 @@ class ReportePolicy
     }
 
     /**
-     * Determinar si el usuario puede restaurar múltiples registros.
+     * Determine whether the user can bulk restore.
      */
     public function restoreAny(User $user): bool
     {
@@ -91,7 +91,7 @@ class ReportePolicy
     }
 
     /**
-     * Determinar si el usuario puede replicar el modelo.
+     * Determine whether the user can replicate.
      */
     public function replicate(User $user, Reporte $reporte): bool
     {
@@ -99,7 +99,7 @@ class ReportePolicy
     }
 
     /**
-     * Determinar si el usuario puede reordenar los registros.
+     * Determine whether the user can reorder.
      */
     public function reorder(User $user): bool
     {

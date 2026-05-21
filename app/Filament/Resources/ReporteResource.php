@@ -195,13 +195,22 @@ class ReporteResource extends Resource
                     ->color(fn ($state) => match ($state) {
                         'Pendiente'   => 'danger',
                         'En proceso'  => 'warning',
-                        'Verificado'  => 'info',
+                        'verificado'  => 'info',
                         'Finalizado'  => 'success',
                         default       => 'gray',
                     })
                     ->sortable()
                     ->searchable()
                     ->alignment('center'),
+                
+                Tables\Columns\IconColumn::make('imagenes')
+                    ->label('Imágenes')
+                    ->getStateUsing(fn ($record) => !empty($record->imagenes))
+                    ->boolean()
+                    ->trueIcon('heroicon-o-camera')
+                    ->falseIcon('heroicon-o-x-circle')
+                    ->alignment('center')
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('descripcion')
                     ->label('Observaciones')
@@ -220,7 +229,7 @@ class ReporteResource extends Resource
                     Tables\Actions\DeleteAction::make()
                         ->label('Eliminar'),
 
-                    // Nuevo Action que guarda en BitacoraEstado
+                    // ACCIÓN CON LA SINTAXIS CORRECTA
                     Action::make('cambiarEstadoBitacora')
                         ->label('Cambiar estado')
                         ->modalWidth('lg')
@@ -228,28 +237,69 @@ class ReporteResource extends Resource
                         ->form([
                             Select::make('estado_id')
                                 ->label('Nuevo estado')
-                                ->options(Estado::pluck('descripcion', 'id')->toArray())
+                                ->options(Estado::all()->pluck('descripcion', 'id'))
                                 ->required(),
                             Textarea::make('descripcion')
-                                ->label('Observaciones')
+                                ->label('Observaciones del cambio')
                                 ->rows(4)
                                 ->required(),
                         ])
-                        ->action(function (array $data, Action $action) {
-                            $reporte = $action->getRecord();
-                            // Guardar en BitacoraEstado
-                            BitacoraEstado::create([
-                                'reporte_id'   => $reporte->id,
-                                'estado_id'    => $data['estado_id'],
-                                'descripcion'  => $data['descripcion'],
-                                'cambiado_por' => Auth::user()->name ?? 'Sistema',
-                            ]);
+                        ->action(function ($data, $record) {
+                            // LOG para depuración
+                            \Illuminate\Support\Facades\Log::info('=== INICIANDO CAMBIO DE ESTADO ===');
+                            \Illuminate\Support\Facades\Log::info('Reporte ID: ' . $record->id);
+                            \Illuminate\Support\Facades\Log::info('Estado actual ID: ' . $record->estado_id);
+                            \Illuminate\Support\Facades\Log::info('Nuevo estado ID: ' . $data['estado_id']);
+                            
+                            // Guardar estado anterior
+                            $estadoAnterior = $record->estado->descripcion ?? 'Sin estado';
+                            
+                            // 1. Actualizar el estado del reporte
+                            $record->estado_id = $data['estado_id'];
+                            $guardado = $record->save();
+                            
+                            \Illuminate\Support\Facades\Log::info('¿Guardado?: ' . ($guardado ? 'SÍ' : 'NO'));
+                            
+                            if ($guardado) {
+                                // Recargar el modelo
+                                $record->refresh();
+                                \Illuminate\Support\Facades\Log::info('Estado después de refresh: ' . $record->estado_id);
+                                
+                                // 2. Obtener nuevo estado
+                                $nuevoEstado = Estado::find($data['estado_id']);
+                                $nuevoEstadoDesc = $nuevoEstado->descripcion ?? 'Desconocido';
+                                
+                                // 3. Crear registro en bitácora
+                                BitacoraEstado::create([
+                                    'reporte_id'    => $record->id,
+                                    'estado_id'     => $data['estado_id'],
+                                    'descripcion'   => "Cambio de estado: {$estadoAnterior} → {$nuevoEstadoDesc}. " . 
+                                                      $data['descripcion'],
+                                    'cambiado_por'  => Auth::user()->name ?? 'Sistema',
+                                    'fecha'         => Carbon::now()->format('Y-m-d'),
+                                    'hora'          => Carbon::now()->format('H:i:s'),
+                                ]);
 
-                            Notification::make()
-                                ->title('Estado registrado en Bitácora')
-                                ->body('El estado se actualizó y se guardó en la bitácora.')
-                                ->success()
-                                ->send();
+                                \Illuminate\Support\Facades\Log::info('Bitácora creada para reporte: ' . $record->id);
+                                
+                                Notification::make()
+                                    ->title('¡Estado actualizado!')
+                                    ->body("El estado ha sido cambiado de {$estadoAnterior} a {$nuevoEstadoDesc}")
+                                    ->success()
+                                    ->send();
+                            } else {
+                                Notification::make()
+                                    ->title('Error')
+                                    ->body('No se pudo actualizar el estado del reporte')
+                                    ->danger()
+                                    ->send();
+                            }
+                            
+                            \Illuminate\Support\Facades\Log::info('=== FIN CAMBIO DE ESTADO ===');
+                        })
+                        ->after(function () {
+                            // Esto fuerza un refresh de la página
+                            redirect()->to(ReporteResource::getUrl('index'));
                         }),
                 ])
                 ->button()

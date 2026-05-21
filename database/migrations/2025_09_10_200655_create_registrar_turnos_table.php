@@ -11,8 +11,8 @@ return new class extends Migration
         Schema::create('registrar_turnos', function (Blueprint $table) {
             $table->id();
             $table->date('fecha');
-            $table->dateTime('hora_inicio');
-            $table->dateTime('hora_fin');
+            $table->time('hora_inicio')->nullable(false);
+            $table->time('hora_fin')->nullable(false);
             $table->text('observacion')->nullable();
             $table->foreignId('puesto_seguridad_id')->constrained('puesto_seguridads')->cascadeOnDelete();
             $table->foreignId('colaborador_id')->constrained('colaboradors')->cascadeOnDelete();

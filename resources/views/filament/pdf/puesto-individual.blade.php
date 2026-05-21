@@ -67,7 +67,7 @@
     </div>
     
     <div class="qr-code">
-        <img src="data:image/svg+xml;base64,{{ $qrCode }}" alt="QR Code">
+        <img src="data:{{ ($qrEsPng ?? false) ? 'image/png' : 'image/svg+xml' }};base64,{{ $qrCode }}" alt="QR Code">
     </div>
     
     <div class="info">

@@ -24,7 +24,7 @@ return new class extends Migration
             $table->integer('edad')->nullable();
             $table->string('barrio', 250)->nullable();
             $table->string('direccion', 250)->nullable();
-            $table->string('correo_corporativo', 250)->unique();
+            $table->string('correo_corporativo', 250)->unique()->nullable();
             $table->string('correo_personal')->unique();
             $table->date('fechainiciolab')->nullable();
             $table->date('fechafinlab')->nullable();

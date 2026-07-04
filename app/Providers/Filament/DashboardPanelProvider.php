@@ -2,12 +2,12 @@
 
 namespace App\Providers\Filament;
 
-use Filament\Http\Middleware\Authenticate;
+use App\Filament\Pages\SecurityDashboard;          // ✅ namespace correcto
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
+use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
@@ -19,6 +19,9 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use App\Http\Middleware\EnsureUserIsActive;
+use App\Http\Middleware\EnsurePasswordIsChanged;
+use App\Filament\Pages\CambiarPassword;
 
 class DashboardPanelProvider extends PanelProvider
 {
@@ -28,20 +31,32 @@ class DashboardPanelProvider extends PanelProvider
             ->default()
             ->id('dashboard')
             ->path('dashboard')
+            ->brandName('Lista de Chequeo')
+            //->brandLogo(asset('images/logo.png'))
+            //->favicon(asset('images/favicon.ico'))
             ->login()
             ->colors([
                 'primary' => Color::Amber,
             ])
+
+            // ✅ Auto-descubre Resources, Pages y Widgets de sus carpetas
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
-            ->pages([
-                Pages\Dashboard::class,
-            ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
+
+            // ✅ Solo listamos lo que NO se auto-descubre o necesita orden específico
+            ->pages([
+                SecurityDashboard::class,   // Reemplaza el Dashboard por defecto
+                CambiarPassword::class,
+            ])
+
+            // ✅ Los widgets de Filament base que quieras mantener
             ->widgets([
                 Widgets\AccountWidget::class,
-                Widgets\FilamentInfoWidget::class,
+                // Widgets\FilamentInfoWidget::class, // puedes quitarlo si no lo necesitas
+                
             ])
+
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
@@ -52,12 +67,15 @@ class DashboardPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+                EnsureUserIsActive::class,
             ])
             ->plugins([
                 FilamentShieldPlugin::make(),
             ])
             ->authMiddleware([
                 Authenticate::class,
+                EnsureUserIsActive::class,
+                EnsurePasswordIsChanged::class,
             ])
             ->navigationGroups([
                 'Gestión de Usuarios',

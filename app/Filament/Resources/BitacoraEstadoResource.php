@@ -19,6 +19,8 @@ class BitacoraEstadoResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
     protected static ?string $navigationGroup = 'Reportes';
     protected static ?string $navigationLabel = 'Bitácora del reporte';
+    protected static ?string $modelLabel       = 'Bitácora del reporte';
+    protected static ?string $pluralModelLabel = 'Bitácora del reporte';
     protected static ?int $navigationSort = 8;
 
     public static function form(Form $form): Form

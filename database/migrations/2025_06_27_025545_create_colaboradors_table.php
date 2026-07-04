@@ -11,21 +11,28 @@ return new class extends Migration
         Schema::create('colaboradors', function (Blueprint $table) {
             $table->id();
 
-            // 👇 USUARIO OPCIONAL
+            // Usuario opcional
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
 
             $table->string('nombre', 250)->nullable();
             $table->string('apellido', 250)->nullable();
-            $table->bigInteger('celular')->nullable();
-            $table->bigInteger('documento')->nullable();
+
+            // Documento y teléfonos como texto
+            $table->string('documento', 250)->nullable();
+            $table->string('celular', 250)->nullable();
+            $table->string('telefono', 250)->nullable();
+
             $table->string('lugarnacimiento', 250)->nullable();
-            $table->integer('telefono')->nullable();
+
             $table->date('fecha_nacimiento')->nullable();
             $table->integer('edad')->nullable();
+
             $table->string('barrio', 250)->nullable();
             $table->string('direccion', 250)->nullable();
-            $table->string('correo_corporativo', 250)->unique()->nullable();
-            $table->string('correo_personal')->unique();
+
+            $table->string('correo_corporativo', 250)->nullable()->unique();
+            $table->string('correo_personal', 250)->unique();
+
             $table->date('fechainiciolab')->nullable();
             $table->date('fechafinlab')->nullable();
 

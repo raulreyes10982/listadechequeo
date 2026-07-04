@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "68d6759ba634851fbd2f7ec155b72805",
+    "content-hash": "f41ff707b655fd62ba8cf7230cd97c31",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -1726,6 +1726,7 @@
                 "issues": "https://github.com/filamentphp/filament/issues",
                 "source": "https://github.com/filamentphp/filament"
             },
+            "abandoned": "lara-zeus/spatie-translatable",
             "time": "2025-08-12T13:15:45+00:00"
         },
         {
@@ -4353,6 +4354,64 @@
                 }
             ],
             "time": "2025-01-30T13:51:11+00:00"
+        },
+        {
+            "name": "osamaatef/filament-drilldown-sidebar",
+            "version": "v1.4.3",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/osamaatef1/filament-drilldown-sidebar.git",
+                "reference": "d15b674a29ac62ed180c781124c72e8d9c34a785"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/osamaatef1/filament-drilldown-sidebar/zipball/d15b674a29ac62ed180c781124c72e8d9c34a785",
+                "reference": "d15b674a29ac62ed180c781124c72e8d9c34a785",
+                "shasum": ""
+            },
+            "require": {
+                "filament/filament": "^3.0||^4.0||^5.0",
+                "illuminate/contracts": "^10.0||^11.0||^12.0||^13.0",
+                "php": "^8.1"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "OsamaAtef\\DrilldownSidebar\\DrilldownSidebarServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "OsamaAtef\\DrilldownSidebar\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Osama Atef",
+                    "email": "osamaatef1@users.noreply.github.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "A Filament plugin that adds optional drill-down navigation to sidebar groups.",
+            "homepage": "https://github.com/osamaatef1/filament-drilldown-sidebar",
+            "keywords": [
+                "Drilldown",
+                "filament",
+                "laravel",
+                "navigation",
+                "sidebar"
+            ],
+            "support": {
+                "issues": "https://github.com/osamaatef1/filament-drilldown-sidebar/issues",
+                "source": "https://github.com/osamaatef1/filament-drilldown-sidebar/tree/v1.4.3"
+            },
+            "time": "2026-04-23T12:16:59+00:00"
         },
         {
             "name": "phpoption/phpoption",
@@ -13346,5 +13405,5 @@
         "php": "^8.2"
     },
     "platform-dev": {},
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.9.0"
 }

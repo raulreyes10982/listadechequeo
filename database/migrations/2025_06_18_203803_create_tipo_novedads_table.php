@@ -20,13 +20,13 @@ return new class extends Migration
 
     /**
      * Reverse the migrations.
+     *
+     * ✅ CORRECCIÓN: el método down() original tenía Schema::create() en lugar
+     * de Schema::dropIfExists(), lo que causaba que al revertir la migración
+     * se intentara crear la tabla nuevamente en lugar de eliminarla.
      */
     public function down(): void
     {
-         Schema::create('tipo_novedads', function (Blueprint $table) {
-            $table->bigIncrements('id');
-            $table->string('descripcion', 250)->nullable();
-            $table->timestamps();
-        });
+        Schema::dropIfExists('tipo_novedads');
     }
 };

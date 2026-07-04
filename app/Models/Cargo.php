@@ -4,24 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/**
- * @property int $id
- * @property string|null $descripcion
- * @property int $area_id
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\Area $area
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Cargo newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Cargo newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Cargo query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Cargo whereAreaId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Cargo whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Cargo whereDescripcion($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Cargo whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Cargo whereUpdatedAt($value)
- * @mixin \Eloquent
- */
 class Cargo extends Model
 {
     use HasFactory;
@@ -34,10 +19,17 @@ class Cargo extends Model
     /**
      * Relación: un cargo pertenece a un área
      */
-    public function area()
+    public function area(): BelongsTo
     {
         return $this->belongsTo(Area::class);
     }
 
-    
+    /**
+     * ✅ Relación: un cargo es ocupado por muchos colaboradores
+     * Necesaria para mostrar el contador y bloquear eliminación
+     */
+    public function colaboradores(): HasMany
+    {
+        return $this->hasMany(Colaborador::class, 'cargo_id');
+    }
 }

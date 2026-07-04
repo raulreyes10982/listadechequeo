@@ -229,11 +229,20 @@ class ReporteResource extends Resource
                     Tables\Actions\DeleteAction::make()
                         ->label('Eliminar'),
 
-                    // ACCIÓN CON LA SINTAXIS CORRECTA
                     Action::make('cambiarEstadoBitacora')
                         ->label('Cambiar estado')
                         ->modalWidth('lg')
-                        ->icon('heroicon-o-document-text')
+                        ->icon('heroicon-o-arrow-path')
+                        // ✅ Try-catch porque hasPermissionTo() lanza excepción
+                        // si el permiso no existe en la BD (PermissionDoesNotExist)
+                        ->visible(function () {
+                            if (! Auth::check()) return false;
+                            try {
+                                return Auth::user()->hasPermissionTo('cambiar_estado');
+                            } catch (\Spatie\Permission\Exceptions\PermissionDoesNotExist $e) {
+                                return false;
+                            }
+                        })
                         ->form([
                             Select::make('estado_id')
                                 ->label('Nuevo estado')
@@ -245,11 +254,8 @@ class ReporteResource extends Resource
                                 ->required(),
                         ])
                         ->action(function ($data, $record) {
-                            // LOG para depuración
-                            \Illuminate\Support\Facades\Log::info('=== INICIANDO CAMBIO DE ESTADO ===');
-                            \Illuminate\Support\Facades\Log::info('Reporte ID: ' . $record->id);
-                            \Illuminate\Support\Facades\Log::info('Estado actual ID: ' . $record->estado_id);
-                            \Illuminate\Support\Facades\Log::info('Nuevo estado ID: ' . $data['estado_id']);
+
+
                             
                             // Guardar estado anterior
                             $estadoAnterior = $record->estado->descripcion ?? 'Sin estado';
@@ -258,12 +264,9 @@ class ReporteResource extends Resource
                             $record->estado_id = $data['estado_id'];
                             $guardado = $record->save();
                             
-                            \Illuminate\Support\Facades\Log::info('¿Guardado?: ' . ($guardado ? 'SÍ' : 'NO'));
-                            
                             if ($guardado) {
                                 // Recargar el modelo
                                 $record->refresh();
-                                \Illuminate\Support\Facades\Log::info('Estado después de refresh: ' . $record->estado_id);
                                 
                                 // 2. Obtener nuevo estado
                                 $nuevoEstado = Estado::find($data['estado_id']);
@@ -279,8 +282,6 @@ class ReporteResource extends Resource
                                     'fecha'         => Carbon::now()->format('Y-m-d'),
                                     'hora'          => Carbon::now()->format('H:i:s'),
                                 ]);
-
-                                \Illuminate\Support\Facades\Log::info('Bitácora creada para reporte: ' . $record->id);
                                 
                                 Notification::make()
                                     ->title('¡Estado actualizado!')
@@ -294,13 +295,8 @@ class ReporteResource extends Resource
                                     ->danger()
                                     ->send();
                             }
-                            
-                            \Illuminate\Support\Facades\Log::info('=== FIN CAMBIO DE ESTADO ===');
                         })
-                        ->after(function () {
-                            // Esto fuerza un refresh de la página
-                            redirect()->to(ReporteResource::getUrl('index'));
-                        }),
+                        ->after(fn ($livewire) => $livewire->dispatch('$refresh')),
                 ])
                 ->button()
                 ->label('Acciones'),

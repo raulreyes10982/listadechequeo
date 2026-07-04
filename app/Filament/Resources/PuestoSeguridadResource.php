@@ -23,13 +23,12 @@ class PuestoSeguridadResource extends Resource
 {
     protected static ?string $model = PuestoSeguridad::class;
 
-    protected static ?string $navigationGroup = 'Programación';
-
-    protected static ?string $navigationLabel = 'Puestos de Seguridad';
-
-    protected static ?string $navigationIcon = 'heroicon-o-shield-check';
-
-    protected static ?int $navigationSort = 1;
+    protected static ?string $navigationGroup   =   'Programación';
+    protected static ?string $navigationLabel   =   'Puestos de Seguridad';
+    protected static ?string $modelLabel        =   'Puestos de Seguridad';
+    protected static ?string $pluralModelLabel  =   'Puestos de Seguridad';
+    protected static ?string $navigationIcon    =   'heroicon-o-shield-check';
+    protected static ?int $navigationSort       =    1;
 
     public static function puedeGestionarQr(?User $user = null): bool{
         // ✅ Garantiza que $user sea una instancia de User, no de Authenticatable

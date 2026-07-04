@@ -2,76 +2,10 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-/**
- * @property int $id
- * @property int|null $user_id
- * @property string|null $nombre
- * @property string|null $apellido
- * @property int|null $celular
- * @property int|null $documento
- * @property string|null $lugarnacimiento
- * @property int|null $telefono
- * @property string|null $fecha_nacimiento
- * @property int|null $edad
- * @property string|null $barrio
- * @property string|null $direccion
- * @property string $correo_corporativo
- * @property string $correo_personal
- * @property string|null $fechainiciolab
- * @property string|null $fechafinlab
- * @property int $tipo_documento_id
- * @property int $estado_civil_id
- * @property int $departamento_id
- * @property int $area_id
- * @property int $cargo_id
- * @property int $tipo_contrato_id
- * @property int $genero_id
- * @property int $grupo_sanguineo_id
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\Area $area
- * @property-read \App\Models\Cargo $cargo
- * @property-read \App\Models\Departamento $departamento
- * @property-read \App\Models\EstadoCivil $estadoCivil
- * @property-read \App\Models\Genero $genero
- * @property-read \App\Models\GrupoSanguineo $grupoSanguineo
- * @property-read \App\Models\TipoContrato $tipoContrato
- * @property-read \App\Models\TipoDocumento $tipoDocumento
- * @property-read \App\Models\User|null $user
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Colaborador newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Colaborador newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Colaborador query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Colaborador whereApellido($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Colaborador whereAreaId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Colaborador whereBarrio($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Colaborador whereCargoId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Colaborador whereCelular($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Colaborador whereCorreoCorporativo($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Colaborador whereCorreoPersonal($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Colaborador whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Colaborador whereDepartamentoId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Colaborador whereDireccion($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Colaborador whereDocumento($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Colaborador whereEdad($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Colaborador whereEstadoCivilId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Colaborador whereFechaNacimiento($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Colaborador whereFechafinlab($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Colaborador whereFechainiciolab($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Colaborador whereGeneroId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Colaborador whereGrupoSanguineoId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Colaborador whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Colaborador whereLugarnacimiento($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Colaborador whereNombre($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Colaborador whereTelefono($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Colaborador whereTipoContratoId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Colaborador whereTipoDocumentoId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Colaborador whereUpdatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Colaborador whereUserId($value)
- * @mixin \Eloquent
- */
 class Colaborador extends Model
 {
     protected $fillable = [
@@ -100,6 +34,47 @@ class Colaborador extends Model
         'grupo_sanguineo_id',
     ];
 
+    protected $casts = [
+        // ✅ Campos que eran integer — ahora son string en la BD
+        'celular'          => 'string',
+        'telefono'         => 'string',
+        'documento'        => 'string',
+        // Fechas
+        'fecha_nacimiento' => 'date',
+        'fechainiciolab'   => 'date',
+        'fechafinlab'      => 'date',
+    ];
+
+    /*
+    |--------------------------------------------------------------------------
+    | BOOT — calcular edad automáticamente
+    |--------------------------------------------------------------------------
+    | Se dispara al CREAR y al ACTUALIZAR si cambia la fecha de nacimiento.
+    | Así la columna "edad" siempre está sincronizada sin intervención manual.
+    |--------------------------------------------------------------------------
+    */
+    protected static function booted(): void
+    {
+        // Al crear: calcular edad desde fecha_nacimiento si se provee
+        static::creating(function (Colaborador $colaborador) {
+            if ($colaborador->fecha_nacimiento) {
+                $colaborador->edad = Carbon::parse($colaborador->fecha_nacimiento)->age;
+            }
+        });
+
+        // Al actualizar: recalcular solo si cambió la fecha de nacimiento
+        static::updating(function (Colaborador $colaborador) {
+            if ($colaborador->isDirty('fecha_nacimiento') && $colaborador->fecha_nacimiento) {
+                $colaborador->edad = Carbon::parse($colaborador->fecha_nacimiento)->age;
+            }
+        });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | RELACIONES
+    |--------------------------------------------------------------------------
+    */
     public function tipoDocumento(): BelongsTo
     {
         return $this->belongsTo(TipoDocumento::class);
@@ -135,13 +110,18 @@ class Colaborador extends Model
         return $this->belongsTo(Genero::class);
     }
 
-    public function grupoSanguineo()
+    public function grupoSanguineo(): BelongsTo
     {
         return $this->belongsTo(GrupoSanguineo::class);
     }
 
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
+
+    public function documentos(): \Illuminate\Database\Eloquent\Relations\HasMany
+{
+    return $this->hasMany(ColaboradorDocumento::class);
+}
 }

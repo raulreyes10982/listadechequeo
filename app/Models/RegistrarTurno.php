@@ -2,37 +2,13 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Rules\SinSolapamientoTurno;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Database\Eloquent\Builder;
 
-/**
- * @property int $id
- * @property string $fecha
- * @property string $hora_inicio
- * @property string $hora_fin
- * @property string|null $observacion
- * @property int $puesto_seguridad_id
- * @property int $colaborador_id
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\Colaborador $colaborador
- * @property-read \App\Models\PuestoSeguridad $puestoSeguridad
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\VerificacionTurno> $verificaciones
- * @property-read int|null $verificaciones_count
- * @method static \Illuminate\Database\Eloquent\Builder<static>|RegistrarTurno newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|RegistrarTurno newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|RegistrarTurno query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|RegistrarTurno whereColaboradorId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|RegistrarTurno whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|RegistrarTurno whereFecha($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|RegistrarTurno whereHoraFin($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|RegistrarTurno whereHoraInicio($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|RegistrarTurno whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|RegistrarTurno whereObservacion($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|RegistrarTurno wherePuestoSeguridadId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|RegistrarTurno whereUpdatedAt($value)
- * @mixin \Eloquent
- */
 class RegistrarTurno extends Model
 {
     use HasFactory;
@@ -51,7 +27,6 @@ class RegistrarTurno extends Model
     | Relaciones
     |--------------------------------------------------------------------------
     */
-
     public function puestoSeguridad()
     {
         return $this->belongsTo(PuestoSeguridad::class, 'puesto_seguridad_id');
@@ -71,30 +46,74 @@ class RegistrarTurno extends Model
     |--------------------------------------------------------------------------
     | Eventos del Modelo
     |--------------------------------------------------------------------------
-    |
-    | - Si no se envía la fecha, se asigna la actual.
-    | - Al crear un turno, se genera automáticamente una verificación "ingreso"
-    |   con estado pendiente y sin hora/verificador asignado.
-    |
     */
-
-    protected static function booted()
+    protected static function booted(): void
     {
+        // Asignar fecha si no viene
         static::creating(function ($turno) {
             if (empty($turno->fecha)) {
                 $turno->fecha = now()->toDateString();
             }
         });
 
+        // ✅ Validar solapamiento ANTES de crear
+        static::creating(function ($turno) {
+            static::validarSolapamiento($turno);
+        });
+
+        // ✅ Validar solapamiento ANTES de actualizar (si cambian campos clave)
+        static::updating(function ($turno) {
+            if ($turno->isDirty(['fecha', 'hora_inicio', 'hora_fin', 'puesto_seguridad_id', 'colaborador_id'])) {
+                static::validarSolapamiento($turno, $turno->id);
+            }
+        });
+
+        // Crear verificaciones de ingreso y salida al crear el turno
         static::created(function ($turno) {
-            // Crear verificación inicial "ingreso"
             $turno->verificaciones()->create([
-                'tipo' => 'ingreso',
-                'estado' => 'pendiente',
+                'tipo'              => 'ingreso',
+                'estado'            => 'pendiente',
                 'hora_verificacion' => null,
-                'verificado_por' => null,
-                'observacion' => null,
+                'verificado_por'    => null,
+                'observacion'       => null,
+            ]);
+
+            $turno->verificaciones()->create([
+                'tipo'              => 'salida',
+                'estado'            => 'pendiente',
+                'hora_verificacion' => null,
+                'verificado_por'    => null,
+                'observacion'       => null,
             ]);
         });
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validar solapamiento — lanza ValidationException si hay conflicto
+    |--------------------------------------------------------------------------
+    */
+    protected static function validarSolapamiento(self $turno, ?int $excludeId = null): void
+    {
+        $regla = new SinSolapamientoTurno(
+            fecha:         $turno->fecha,
+            horaInicio:    $turno->hora_inicio,
+            horaFin:       $turno->hora_fin,
+            puestoId:      $turno->puesto_seguridad_id,
+            colaboradorId: $turno->colaborador_id,
+            excludeId:     $excludeId,
+        );
+
+        $validator = Validator::make(
+            ['turno' => true],
+            ['turno' => [$regla]]
+        );
+
+        if ($validator->fails()) {
+            throw ValidationException::withMessages([
+                'hora_inicio' => $validator->errors()->first('turno'),
+            ]);
+        }
+    }
+
 }

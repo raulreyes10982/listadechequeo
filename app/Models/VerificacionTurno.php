@@ -6,63 +6,15 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Spatie\Permission\Traits\HasRoles;
-use Illuminate\Notifications\Notifiable;
 use Carbon\Carbon;
 
-/**
- * @property int $id
- * @property int $registrar_turno_id
- * @property string $tipo
- * @property \Illuminate\Support\Carbon|null $hora_verificacion
- * @property string|null $observacion
- * @property int|null $verificado_por
- * @property string $estado
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read mixed $color_estado
- * @property-read mixed $color_tipo
- * @property-read mixed $fecha_formateada
- * @property-read mixed $hora_formateada
- * @property-read mixed $icono_tipo
- * @property-read \App\Models\PuestoSeguridad|null $puesto
- * @property-read \Illuminate\Notifications\DatabaseNotificationCollection<int, \Illuminate\Notifications\DatabaseNotification> $notifications
- * @property-read int|null $notifications_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \Spatie\Permission\Models\Permission> $permissions
- * @property-read int|null $permissions_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \Spatie\Permission\Models\Role> $roles
- * @property-read int|null $roles_count
- * @property-read \App\Models\RegistrarTurno $turno
- * @property-read \App\Models\User|null $verificador
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno delDia()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno delPuesto($puestoId)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno delUsuario($usuarioId)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno permission($permissions, $without = false)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno porTipo($tipo)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno role($roles, $guard = null, $without = false)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno verificadas()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno whereEstado($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno whereHoraVerificacion($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno whereObservacion($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno whereRegistrarTurnoId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno whereTipo($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno whereUpdatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno whereVerificadoPor($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno withoutPermission($permissions)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|VerificacionTurno withoutRole($roles, $guard = null)
- * @mixin \Eloquent
- */
 class VerificacionTurno extends Model
 {
-        use HasFactory, Notifiable;
+    // ✅ CORRECCIÓN: Eliminado Notifiable y HasRoles — estos traits son solo para User
+    use HasFactory;
 
     protected $table = 'verificacion_turnos';
-    
+
     protected $fillable = [
         'registrar_turno_id',
         'tipo',
@@ -77,116 +29,91 @@ class VerificacionTurno extends Model
     ];
 
     /* ============================================
-       RELACIONES CORREGIDAS
+       RELACIONES
     ============================================ */
-    
-    /**
-     * Relación con el turno
-     */
-    public function turno() 
+
+    public function turno()
     {
         return $this->belongsTo(RegistrarTurno::class, 'registrar_turno_id');
     }
 
-    /**
-     * Relación con el usuario verificador
-     */
-    public function verificador() 
+    public function verificador()
     {
         return $this->belongsTo(User::class, 'verificado_por');
     }
 
+    /* ============================================
+       ACCESORES CORREGIDOS
+    ============================================ */
+
     /**
-     * 🔧 CORRECCIÓN: Acceso al puesto a través del turno (MÉTODO NUEVO)
+     * ✅ CORRECCIÓN: antes llamaba a $this->puestoSeguridad que no existe.
+     * Ahora accede correctamente a través de la relación turno → puestoSeguridad.
      */
     public function getPuestoAttribute()
     {
-        return $this->puestoSeguridad->codigo ?? null;
-    }
-
-    /**
-     * 🔧 CORRECCIÓN: Relación directa para queries (OPCIONAL)
-     */
-    public function puesto()
-    {
-        return $this->hasOneThrough(
-            PuestoSeguridad::class,
-            RegistrarTurno::class,
-            'id', // Primary key en RegistrarTurno
-            'id', // Primary key en PuestoSeguridad  
-            'registrar_turno_id', // Foreign key en VerificacionTurno
-            'puesto_seguridad_id' // Foreign key en RegistrarTurno
-        );
+        return $this->turno?->puestoSeguridad?->codigo ?? null;
     }
 
     /* ============================================
        BOOT Y EVENTOS
     ============================================ */
-    
-    /**
-     * Boot: asignar automáticamente verificador y hora
-     */
-    protected static function booted() 
+
+    protected static function booted()
     {
         static::creating(function ($verificacion) {
+            // Asignar verificador y hora al crear con estado verificado
             if (Auth::check() && $verificacion->estado === 'verificado') {
-                $verificacion->verificado_por = Auth::id();
+                $verificacion->verificado_por    = Auth::id();
+                $verificacion->hora_verificacion = now();
+            }
+        });
+
+        // ✅ CORRECCIÓN: también asignar verificador al actualizar a estado verificado
+        static::updating(function ($verificacion) {
+            if ($verificacion->isDirty('estado') && $verificacion->estado === 'verificado') {
+                $verificacion->verificado_por    = Auth::id();
                 $verificacion->hora_verificacion = now();
             }
         });
 
         static::created(function ($verificacion) {
             Log::info('Verificación creada', [
-                'id' => $verificacion->id,
-                'tipo' => $verificacion->tipo,
+                'id'       => $verificacion->id,
+                'tipo'     => $verificacion->tipo,
                 'turno_id' => $verificacion->registrar_turno_id,
-                'usuario' => Auth::id() ?? 'sistema'
+                'usuario'  => Auth::id() ?? 'sistema',
             ]);
         });
     }
 
     /* ============================================
-       SCOPES PARA CONSULTAS FRECUENTES
+       SCOPES
     ============================================ */
-    
-    /**
-     * Scope: Verificaciones del día actual
-     */
+
     public function scopeDelDia($query)
     {
         return $query->whereDate('hora_verificacion', Carbon::today());
     }
 
-    /**
-     * Scope: Verificaciones por tipo
-     */
     public function scopePorTipo($query, $tipo)
     {
         return $query->where('tipo', $tipo);
     }
 
-    /**
-     * Scope: Verificaciones verificadas
-     */
     public function scopeVerificadas($query)
     {
         return $query->where('estado', 'verificado');
     }
 
-    /**
-     * Scope: Verificaciones de un usuario específico
-     */
     public function scopeDelUsuario($query, $usuarioId)
     {
         return $query->where('verificado_por', $usuarioId);
     }
 
-    /**
-     * Scope: Verificaciones de un puesto específico
-     */
     public function scopeDelPuesto($query, $puestoId)
     {
-        return $query->whereHas('turno', function($q) use ($puestoId) {
+        return $query->whereHas('turno', function ($q) use ($puestoId) {
             $q->where('puesto_seguridad_id', $puestoId);
         });
     }
@@ -194,236 +121,236 @@ class VerificacionTurno extends Model
     /* ============================================
        MÉTODOS DE INSTANCIA
     ============================================ */
-    
-    /**
-     * Marcar como verificado
-     */
+
     public function marcarComoVerificado($observacion = null)
     {
         $this->update([
-            'estado' => 'verificado',
+            'estado'            => 'verificado',
             'hora_verificacion' => now(),
-            'verificado_por' => Auth::id(),
-            'observacion' => $observacion ?? $this->observacion
+            'verificado_por'    => Auth::id(),
+            'observacion'       => $observacion ?? $this->observacion,
         ]);
 
         Log::info('Verificación marcada como verificada', [
             'verificacion_id' => $this->id,
-            'usuario' => Auth::id()
+            'usuario'         => Auth::id(),
         ]);
 
         return $this;
     }
 
-    /**
-     * Marcar como pendiente
-     */
     public function marcarComoPendiente()
     {
         $this->update([
-            'estado' => 'pendiente',
+            'estado'            => 'pendiente',
             'hora_verificacion' => null,
-            'verificado_por' => null
+            'verificado_por'    => null,
         ]);
 
         return $this;
     }
 
-    /**
-     * Obtener hora formateada
-     */
-    public function getHoraFormateadaAttribute()
-    {
-        return $this->hora_verificacion 
-            ? $this->hora_verificacion->format('H:i') 
-            : '--:--';
-    }
-
-    /**
-     * Obtener fecha formateada
-     */
-    public function getFechaFormateadaAttribute()
-    {
-        return $this->hora_verificacion 
-            ? $this->hora_verificacion->format('d/m/Y') 
-            : '--/--/----';
-    }
-
-    /**
-     * Verificar si está expirada (más de 24 horas sin verificar)
-     */
     public function estaExpirada()
     {
         if ($this->estado === 'verificado') {
             return false;
         }
 
-        $creacion = $this->created_at ?? now();
-        return $creacion->diffInHours(now()) > 24;
+        return ($this->created_at ?? now())->diffInHours(now()) > 24;
+    }
+
+    public function puedeEditar()
+    {
+        return $this->estado === 'pendiente' && ! $this->estaExpirada();
     }
 
     /* ============================================
-       MÉTODO ESTÁTICO ACTUALIZADO (MÁS SEGURO)
+       ATRIBUTOS FORMATEADOS
     ============================================ */
-    
+
+    public function getHoraFormateadaAttribute()
+    {
+        return $this->hora_verificacion
+            ? $this->hora_verificacion->format('H:i')
+            : '--:--';
+    }
+
+    public function getFechaFormateadaAttribute()
+    {
+        return $this->hora_verificacion
+            ? $this->hora_verificacion->format('d/m/Y')
+            : '--/--/----';
+    }
+
+    public function getColorTipoAttribute()
+    {
+        return match ($this->tipo) {
+            'ingreso'   => 'primary',
+            'salida'    => 'success',
+            'ronda'     => 'warning',
+            'reemplazo' => 'info',
+            default     => 'gray',
+        };
+    }
+
+    public function getColorEstadoAttribute()
+    {
+        return match ($this->estado) {
+            'verificado' => 'success',
+            'pendiente'  => 'warning',
+            'cerrado'    => 'danger',
+            default      => 'gray',
+        };
+    }
+
+    public function getIconoTipoAttribute()
+    {
+        return match ($this->tipo) {
+            'ingreso'   => 'heroicon-o-arrow-right-circle',
+            'salida'    => 'heroicon-o-arrow-left-circle',
+            'ronda'     => 'heroicon-o-shield-check',
+            'reemplazo' => 'heroicon-o-user-plus',
+            default     => 'heroicon-o-question-mark-circle',
+        };
+    }
+
+    /* ============================================
+       MÉTODO ESTÁTICO — REGISTRO DESDE QR
+    ============================================ */
+
     /**
-     * Registrar verificación desde QR (MÉTODO ACTUALIZADO)
-     * 🔧 CORRECCIÓN: Ya no se usa directamente, se usa desde el controlador
-     * Pero lo mantenemos por compatibilidad
+     * Registrar verificación desde QR escaneado.
+     *
+     * ✅ CORRECCIÓN: antes usaba $usuario->colaborador_id (columna que no existe
+     * en la tabla users). Ahora usa $usuario->resolverColaborador() definido
+     * en el modelo User, que busca por user_id, correo_corporativo o correo_personal.
      */
-    public static function registrarDesdeQR($codigoQr)
+    public static function registrarDesdeQR(string $codigoQr, ?int $verificacionId = null)
     {
         try {
             $usuario = Auth::user();
-            $ahora = Carbon::now();
+            $ahora   = Carbon::now();
 
-            if (!$usuario) {
+            if (! $usuario) {
                 return ['error' => 'Usuario no autenticado.'];
             }
 
-            // Buscar puesto por código QR (esto debería venir del controlador)
+            // Buscar puesto por código QR
             $puesto = PuestoSeguridad::where('codigo', $codigoQr)->first();
-            
-            if (!$puesto) {
+
+            if (! $puesto) {
                 return ['error' => 'Código QR no pertenece a un puesto válido.'];
             }
 
-            // Buscar turno activo
-            $turno = RegistrarTurno::where('colaborador_id', $usuario->colaborador_id ?? $usuario->id)
+            // ✅ CORRECCIÓN: usar resolverColaborador() en lugar de $usuario->colaborador_id
+            $colaborador = $usuario->resolverColaborador();
+
+            if (! $colaborador) {
+                return ['error' => 'No se encontró un colaborador asociado a tu usuario.'];
+            }
+
+            // Buscar turno activo del colaborador en este puesto
+            $turno = RegistrarTurno::where('colaborador_id', $colaborador->id)
                 ->where('puesto_seguridad_id', $puesto->id)
                 ->whereDate('fecha', $ahora->toDateString())
                 ->whereTime('hora_inicio', '<=', $ahora->toTimeString())
                 ->whereTime('hora_fin', '>=', $ahora->toTimeString())
                 ->first();
 
-            if (!$turno) {
+            if (! $turno) {
                 return ['error' => 'No hay turno activo para este puesto en este momento.'];
             }
 
-            // Determinar tipo de verificación
-            $ultima = self::where('registrar_turno_id', $turno->id)
-                ->where('estado', 'verificado')
-                ->orderBy('hora_verificacion', 'desc')
-                ->first();
+            // Si viene un verificacionId específico (desde el modal de Filament), usarlo
+            if ($verificacionId) {
+                $verificacion = self::where('id', $verificacionId)
+                    ->where('registrar_turno_id', $turno->id)
+                    ->where('estado', 'pendiente')
+                    ->first();
 
-            $tipo = 'ingreso'; // Por defecto
-            
-            if ($ultima) {
-                $tipo = match($ultima->tipo) {
-                    'ingreso' => 'ronda',
-                    'ronda' => 'ronda',
-                    'salida' => 'ingreso', // Nuevo día, nuevo ingreso
-                    default => 'ingreso'
-                };
-                
-                // Si ya es hora de salida
-                $horaFin = Carbon::parse($turno->hora_fin);
-                if ($ahora->greaterThanOrEqualTo($horaFin) && $ultima->tipo !== 'salida') {
-                    $tipo = 'salida';
+                if (! $verificacion) {
+                    return ['error' => 'La verificación no existe o ya fue procesada.'];
+                }
+
+                $tipo = $verificacion->tipo;
+            } else {
+                // Determinar tipo automáticamente por la última verificación
+                $ultima = self::where('registrar_turno_id', $turno->id)
+                    ->where('estado', 'verificado')
+                    ->orderBy('hora_verificacion', 'desc')
+                    ->first();
+
+                $tipo = 'ingreso';
+
+                if ($ultima) {
+                    $horaFin = Carbon::parse($turno->hora_fin);
+
+                    if ($ahora->greaterThanOrEqualTo($horaFin) && $ultima->tipo !== 'salida') {
+                        $tipo = 'salida';
+                    } elseif ($ultima->tipo === 'ingreso') {
+                        $tipo = 'ronda';
+                    }
+                }
+
+                $verificacion = self::where('registrar_turno_id', $turno->id)
+                    ->where('tipo', $tipo)
+                    ->where('estado', 'pendiente')
+                    ->first();
+
+                if (! $verificacion) {
+                    return ['error' => "No hay verificación pendiente de tipo '{$tipo}' para este turno."];
                 }
             }
 
-            // Crear verificación
-            $verificacion = self::create([
-                'registrar_turno_id' => $turno->id,
-                'tipo' => $tipo,
-                'estado' => 'verificado', // Ahora se verifica automáticamente
+            // Validar token QR del puesto
+            if (! $puesto->validarTokenQr($codigoQr) && $codigoQr !== $puesto->codigo) {
+                // Si el QR contiene JSON, extraer el token
+                $datos = json_decode($codigoQr, true);
+                if ($datos && isset($datos['token']) && ! $puesto->validarTokenQr($datos['token'])) {
+                    return ['error' => 'Token QR inválido o expirado.'];
+                }
+            }
+
+            // Marcar como verificada
+            $verificacion->update([
+                'estado'            => 'verificado',
                 'hora_verificacion' => $ahora,
-                'verificado_por' => $usuario->id,
-                'observacion' => "Verificación {$tipo} vía QR"
+                'verificado_por'    => $usuario->id,
+                'observacion'       => "Verificación {$tipo} vía QR",
             ]);
 
             Log::info('Verificación QR registrada', [
                 'verificacion_id' => $verificacion->id,
-                'tipo' => $tipo,
-                'puesto' => $puesto->codigo,
-                'usuario' => $usuario->id
+                'tipo'            => $tipo,
+                'puesto'          => $puesto->codigo,
+                'usuario'         => $usuario->id,
             ]);
 
             return [
-                'success' => true,
-                'tipo' => $tipo,
-                'mensaje' => match($tipo) {
+                'success'      => true,
+                'tipo'         => $tipo,
+                'mensaje'      => match ($tipo) {
                     'ingreso' => '✅ Ingreso registrado correctamente',
-                    'salida' => '✅ Salida registrada correctamente',
-                    'ronda' => '✅ Ronda de verificación registrada',
-                    default => '✅ Verificación registrada'
+                    'salida'  => '✅ Salida registrada correctamente',
+                    'ronda'   => '✅ Ronda de verificación registrada',
+                    default   => '✅ Verificación registrada',
                 },
                 'verificacion' => $verificacion,
-                'data' => [
-                    'id' => $verificacion->id,
-                    'hora' => $verificacion->hora_formateada,
-                    'puesto' => $puesto->puesto,
-                    'codigo_puesto' => $puesto->codigo
-                ]
+                'data'         => [
+                    'id'           => $verificacion->id,
+                    'hora'         => $verificacion->hora_formateada,
+                    'puesto'       => $puesto->puesto,
+                    'codigo_puesto' => $puesto->codigo,
+                ],
             ];
 
         } catch (\Exception $e) {
             Log::error('Error en registrarDesdeQR: ' . $e->getMessage());
-            
+
             return [
                 'error' => 'Error interno al procesar el QR.',
-                'debug' => config('app.debug') ? $e->getMessage() : null
+                'debug' => config('app.debug') ? $e->getMessage() : null,
             ];
         }
     }
-
-    /* ============================================
-       MÉTODOS PARA FILAMENT / UI
-    ============================================ */
-    
-    /**
-     * Obtener color para badges según tipo
-     */
-    public function getColorTipoAttribute()
-    {
-        return match($this->tipo) {
-            'ingreso' => 'primary',
-            'salida' => 'success',
-            'ronda' => 'warning',
-            'reemplazo' => 'info',
-            default => 'gray'
-        };
-    }
-
-    /**
-     * Obtener color para badges según estado
-     */
-    public function getColorEstadoAttribute()
-    {
-        return match($this->estado) {
-            'verificado' => 'success',
-            'pendiente' => 'warning',
-            'cerrado' => 'danger',
-            default => 'gray'
-        };
-    }
-
-    /**
-     * Obtener icono según tipo
-     */
-    public function getIconoTipoAttribute()
-    {
-        return match($this->tipo) {
-            'ingreso' => 'heroicon-o-arrow-right-circle',
-            'salida' => 'heroicon-o-arrow-left-circle',
-            'ronda' => 'heroicon-o-shield-check',
-            'reemplazo' => 'heroicon-o-user-plus',
-            default => 'heroicon-o-question-mark-circle'
-        };
-    }
-
-    /**
-     * Verificar si puede ser editada
-     */
-    public function puedeEditar()
-    {
-        // Solo se pueden editar verificaciones pendientes
-        // y que no hayan expirado
-        return $this->estado === 'pendiente' && !$this->estaExpirada();
-    }
-
-    
-
-    
 }

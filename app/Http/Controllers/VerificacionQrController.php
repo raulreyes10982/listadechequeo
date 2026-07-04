@@ -32,11 +32,11 @@ class VerificacionQrController extends Controller
 
                 $validator = Validator::make(
                     [
-                        'codigo_qr' => $codigoQrRaw,
+                        'codigo_qr'       => $codigoQrRaw,
                         'verificacion_id' => $request->input('verificacion_id'),
                     ],
                     [
-                        'codigo_qr' => 'required|string',
+                        'codigo_qr'       => 'required|string',
                         'verificacion_id' => 'nullable|integer|exists:verificacion_turnos,id',
                     ]
                 );
@@ -44,11 +44,12 @@ class VerificacionQrController extends Controller
                 if ($validator->fails()) {
                     return response()->json([
                         'success' => false,
-                        'mensaje' => '❌ Formato inválido. Se espera JSON.',
-                        'errors' => $validator->errors(),
+                        'mensaje' => '❌ Formato inválido.',
+                        'errors'  => $validator->errors(),
                     ], 422);
                 }
 
+                // ── Decodificar y validar el JSON del QR ─────────────────────
                 $qrData = json_decode($codigoQrRaw, true);
 
                 if (json_last_error() !== JSON_ERROR_NONE || ! is_array($qrData)) {
@@ -60,7 +61,7 @@ class VerificacionQrController extends Controller
 
                 $validatorInterno = Validator::make($qrData, [
                     'codigo' => 'required|string|max:100',
-                    'token' => 'required|string|size:64',
+                    'token'  => 'required|string|size:64',
                 ]);
 
                 if ($validatorInterno->fails()) {
@@ -71,8 +72,9 @@ class VerificacionQrController extends Controller
                 }
 
                 $codigo = trim($qrData['codigo']);
-                $token = trim($qrData['token']);
+                $token  = trim($qrData['token']);
 
+                // ── Validar puesto y token ────────────────────────────────────
                 $puesto = PuestoSeguridad::where('codigo', $codigo)->first();
 
                 if (! $puesto) {
@@ -83,28 +85,49 @@ class VerificacionQrController extends Controller
                     throw new \Exception('Token QR inválido o expirado.');
                 }
 
+                // ── Validar colaborador vinculado al usuario ──────────────────
                 $colaborador = ColaboradorUsuario::actual();
 
                 if (! $colaborador) {
                     throw new \Exception('Su usuario no está vinculado a un colaborador.');
                 }
 
-                $turno = $this->buscarTurnoActivo($puesto->id, $colaborador->id);
+                /*
+                |--------------------------------------------------------------
+                | ✅ CORRECCIÓN PRINCIPAL
+                |
+                | ANTES: se llamaba buscarTurnoActivo() siempre primero.
+                | Esto fallaba al registrar SALIDA fuera del horario del turno
+                | (ej. turno de noche verificado al día siguiente).
+                |
+                | AHORA: si viene verificacion_id, obtenemos el turno
+                | DIRECTAMENTE desde la verificación existente, sin restricción
+                | de horario. El check de horario activo solo aplica cuando
+                | NO hay verificacion_id (flujo sin modal de Filament).
+                |--------------------------------------------------------------
+                */
+                if ($request->filled('verificacion_id')) {
+                    // ── FLUJO CON verificacion_id (desde modal Filament) ──────
+                    $verificacionExistente = VerificacionTurno::with(['turno.colaborador', 'turno.puestoSeguridad'])
+                        ->find($request->integer('verificacion_id'));
 
-                if (! $turno) {
-                    throw new \Exception('No tiene un turno activo asignado en este puesto.');
-                }
+                    if (! $verificacionExistente) {
+                        throw new \Exception('Verificación no encontrada.');
+                    }
 
-                $verificacionExistente = $request->filled('verificacion_id')
-                    ? VerificacionTurno::with('turno')->find($request->integer('verificacion_id'))
-                    : null;
+                    $turno = $verificacionExistente->turno;
 
-                if ($verificacionExistente) {
-                    if ((int) $verificacionExistente->turno?->puesto_seguridad_id !== (int) $puesto->id) {
+                    if (! $turno) {
+                        throw new \Exception('El turno asociado a esta verificación no existe.');
+                    }
+
+                    // Validar que el QR corresponde al puesto de esta verificación
+                    if ((int) $turno->puesto_seguridad_id !== (int) $puesto->id) {
                         throw new \Exception('El QR no corresponde al puesto de esta verificación.');
                     }
 
-                    if ((int) $verificacionExistente->turno?->colaborador_id !== (int) $colaborador->id) {
+                    // Validar que el turno pertenece al colaborador autenticado
+                    if ((int) $turno->colaborador_id !== (int) $colaborador->id) {
                         throw new \Exception('Esta verificación no pertenece a su turno.');
                     }
 
@@ -115,58 +138,77 @@ class VerificacionQrController extends Controller
                     $verificacionExistente->marcarComoVerificado(
                         "Verificación {$verificacionExistente->tipo} vía QR - Puesto: {$puesto->codigo}"
                     );
+
                     $verificacion = $verificacionExistente->fresh();
-                    $tipo = $verificacion->tipo;
+                    $tipo         = $verificacion->tipo;
+
                 } else {
+                    // ── FLUJO SIN verificacion_id (app móvil / API) ───────────
+                    // Aquí sí aplica la restricción de horario activo
+                    $turno = $this->buscarTurnoActivo($puesto->id, $colaborador->id);
+
+                    if (! $turno) {
+                        throw new \Exception('No tiene un turno activo asignado en este puesto.');
+                    }
+
                     $tipo = $this->determinarTipoVerificacion($turno);
 
                     $verificacion = VerificacionTurno::create([
                         'registrar_turno_id' => $turno->id,
-                        'tipo' => $tipo,
-                        'hora_verificacion' => Carbon::now(),
-                        'verificado_por' => Auth::id(),
-                        'estado' => 'verificado',
-                        'observacion' => "Verificación {$tipo} vía QR - Puesto: {$puesto->codigo}",
+                        'tipo'               => $tipo,
+                        'hora_verificacion'  => Carbon::now(),
+                        'verificado_por'     => Auth::id(),
+                        'estado'             => 'verificado',
+                        'observacion'        => "Verificación {$tipo} vía QR - Puesto: {$puesto->codigo}",
                     ]);
                 }
 
                 Log::info('Verificación QR exitosa', [
                     'verificacion_id' => $verificacion->id,
-                    'puesto_id' => $puesto->id,
-                    'turno_id' => $turno->id,
-                    'colaborador_id' => $colaborador->id,
-                    'usuario_id' => Auth::id(),
-                    'tipo' => $tipo,
-                    'timestamp' => now()->toDateTimeString(),
+                    'puesto_id'       => $puesto->id,
+                    'turno_id'        => $turno->id,
+                    'colaborador_id'  => $colaborador->id,
+                    'usuario_id'      => Auth::id(),
+                    'tipo'            => $tipo,
+                    'timestamp'       => now()->toDateTimeString(),
                 ]);
 
                 return response()->json([
                     'success' => true,
                     'mensaje' => $this->getMensajePorTipo($tipo),
-                    'data' => [
+                    'data'    => [
                         'verificacion_id' => $verificacion->id,
-                        'tipo' => $tipo,
-                        'hora' => $verificacion->hora_verificacion->format('H:i'),
-                        'colaborador' => trim(($turno->colaborador->nombre ?? '').' '.($turno->colaborador->apellido ?? '')),
-                        'puesto' => $puesto->puesto,
-                        'codigo_puesto' => $puesto->codigo,
-                        'fecha' => now()->format('d/m/Y'),
+                        'tipo'            => $tipo,
+                        'hora'            => $verificacion->hora_verificacion->format('H:i'),
+                        'colaborador'     => trim(
+                            ($turno->colaborador->nombre ?? '') . ' ' .
+                            ($turno->colaborador->apellido ?? '')
+                        ),
+                        'puesto'          => $puesto->puesto,
+                        'codigo_puesto'   => $puesto->codigo,
+                        'fecha'           => now()->format('d/m/Y'),
                     ],
                 ]);
+
             } catch (\Exception $e) {
-                Log::error('Fallo en verificación QR: '.$e->getMessage(), [
+                Log::error('Fallo en verificación QR: ' . $e->getMessage(), [
                     'codigo_puesto' => $codigo ?? 'N/A',
-                    'usuario_id' => Auth::id() ?? 'N/A',
+                    'usuario_id'    => Auth::id() ?? 'N/A',
                 ]);
 
                 return response()->json([
                     'success' => false,
-                    'mensaje' => '❌ '.$e->getMessage(),
+                    'mensaje' => '❌ ' . $e->getMessage(),
                 ], 400);
             }
         });
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Buscar turno ACTIVO en este momento (solo para flujo sin verificacion_id)
+    |--------------------------------------------------------------------------
+    */
     private function buscarTurnoActivo(int $puestoId, int $colaboradorId): ?RegistrarTurno
     {
         $now = Carbon::now();
@@ -183,11 +225,12 @@ class VerificacionQrController extends Controller
 
     private function turnoActivoQuery(Builder $query, Carbon $now): Builder
     {
-        $currentDate = $now->toDateString();
+        $currentDate  = $now->toDateString();
         $previousDate = $now->copy()->subDay()->toDateString();
-        $currentTime = $now->toTimeString();
+        $currentTime  = $now->toTimeString();
 
         return $query->where(function ($query) use ($currentDate, $previousDate, $currentTime) {
+            // Turno del día actual dentro del horario
             $query->where(function ($q) use ($currentDate, $currentTime) {
                 $q->whereDate('fecha', $currentDate)
                     ->where(function ($inner) use ($currentTime) {
@@ -196,10 +239,12 @@ class VerificacionQrController extends Controller
                             ->whereTime('hora_fin', '>=', $currentTime);
                     })
                     ->orWhere(function ($inner) use ($currentTime) {
+                        // Turno nocturno: hora_inicio > hora_fin (ej. 22:00 → 06:00)
                         $inner->whereColumn('hora_inicio', '>', 'hora_fin')
                             ->whereTime('hora_inicio', '<=', $currentTime);
                     });
             })
+            // Turno nocturno del día anterior que continúa hoy
             ->orWhere(function ($q) use ($previousDate, $currentTime) {
                 $q->whereDate('fecha', $previousDate)
                     ->whereColumn('hora_inicio', '>', 'hora_fin')
@@ -218,7 +263,8 @@ class VerificacionQrController extends Controller
 
         $horaFin = Carbon::parse($turno->hora_fin);
         if ($verificaciones->where('tipo', 'salida')->isEmpty()
-            && Carbon::now()->greaterThanOrEqualTo($horaFin)) {
+            && Carbon::now()->greaterThanOrEqualTo($horaFin)
+        ) {
             return 'salida';
         }
 
@@ -229,12 +275,17 @@ class VerificacionQrController extends Controller
     {
         return match ($tipo) {
             'ingreso' => '✅ Ingreso registrado correctamente',
-            'salida' => '✅ Salida registrada correctamente',
-            'ronda' => '✅ Ronda de verificación registrada',
-            default => '✅ Verificación registrada',
+            'salida'  => '✅ Salida registrada correctamente',
+            'ronda'   => '✅ Ronda de verificación registrada',
+            default   => '✅ Verificación registrada',
         };
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Turno actual del colaborador (para la app móvil)
+    |--------------------------------------------------------------------------
+    */
     public function turnoActual(Request $request)
     {
         if (! Auth::check()) {
@@ -246,13 +297,12 @@ class VerificacionQrController extends Controller
         if (! $colaborador) {
             return response()->json([
                 'success' => true,
-                'estado' => 'sin_turno',
+                'estado'  => 'sin_turno',
                 'mensaje' => 'Su usuario no está vinculado a un colaborador.',
             ]);
         }
 
-        $now = Carbon::now();
-
+        $now   = Carbon::now();
         $turno = $this->turnoActivoQuery(
             RegistrarTurno::query()->where('colaborador_id', $colaborador->id),
             $now
@@ -271,21 +321,21 @@ class VerificacionQrController extends Controller
 
             if ($turnoPendiente) {
                 return response()->json([
-                    'success' => true,
-                    'estado' => 'pendiente',
+                    'success'      => true,
+                    'estado'       => 'pendiente',
                     'turno_actual' => [
-                        'puesto' => $turnoPendiente->puestoSeguridad->puesto,
-                        'codigo_puesto' => $turnoPendiente->puestoSeguridad->codigo,
-                        'hora_inicio' => Carbon::parse($turnoPendiente->hora_inicio)->format('H:i'),
-                        'hora_fin' => Carbon::parse($turnoPendiente->hora_fin)->format('H:i'),
-                        'verificaciones' => ['ingreso' => null, 'salida' => null],
+                        'puesto'          => $turnoPendiente->puestoSeguridad->puesto,
+                        'codigo_puesto'   => $turnoPendiente->puestoSeguridad->codigo,
+                        'hora_inicio'     => Carbon::parse($turnoPendiente->hora_inicio)->format('H:i'),
+                        'hora_fin'        => Carbon::parse($turnoPendiente->hora_fin)->format('H:i'),
+                        'verificaciones'  => ['ingreso' => null, 'salida' => null],
                     ],
                 ]);
             }
 
             return response()->json([
                 'success' => true,
-                'estado' => 'sin_turno',
+                'estado'  => 'sin_turno',
                 'mensaje' => 'No tienes turnos asignados para hoy.',
             ]);
         }
@@ -293,21 +343,26 @@ class VerificacionQrController extends Controller
         $verificaciones = $turno->verificaciones->where('estado', 'verificado');
 
         return response()->json([
-            'success' => true,
-            'estado' => 'activo',
+            'success'      => true,
+            'estado'       => 'activo',
             'turno_actual' => [
-                'puesto' => $turno->puestoSeguridad->puesto,
-                'codigo_puesto' => $turno->puestoSeguridad->codigo,
-                'hora_inicio' => Carbon::parse($turno->hora_inicio)->format('H:i'),
-                'hora_fin' => Carbon::parse($turno->hora_fin)->format('H:i'),
+                'puesto'         => $turno->puestoSeguridad->puesto,
+                'codigo_puesto'  => $turno->puestoSeguridad->codigo,
+                'hora_inicio'    => Carbon::parse($turno->hora_inicio)->format('H:i'),
+                'hora_fin'       => Carbon::parse($turno->hora_fin)->format('H:i'),
                 'verificaciones' => [
                     'ingreso' => $verificaciones->firstWhere('tipo', 'ingreso')?->hora_verificacion?->format('H:i'),
-                    'salida' => $verificaciones->firstWhere('tipo', 'salida')?->hora_verificacion?->format('H:i'),
+                    'salida'  => $verificaciones->firstWhere('tipo', 'salida')?->hora_verificacion?->format('H:i'),
                 ],
             ],
         ]);
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Debug QR (solo en entorno local)
+    |--------------------------------------------------------------------------
+    */
     public function debugQR(Request $request)
     {
         if (! app()->environment('local')) {
@@ -325,16 +380,16 @@ class VerificacionQrController extends Controller
         $data = json_decode($request->input('codigo_qr'), true);
 
         return response()->json([
-            'success' => true,
+            'success'    => true,
             'debug_info' => [
-                'raw_input' => $request->input('codigo_qr'),
-                'parsed_json' => $data,
-                'is_valid_json' => json_last_error() === JSON_ERROR_NONE,
-                'json_error' => json_last_error_msg(),
+                'raw_input'        => $request->input('codigo_qr'),
+                'parsed_json'      => $data,
+                'is_valid_json'    => json_last_error() === JSON_ERROR_NONE,
+                'json_error'       => json_last_error_msg(),
                 'has_codigo_field' => isset($data['codigo']),
-                'has_token_field' => isset($data['token']),
-                'codigo_length' => isset($data['codigo']) ? strlen($data['codigo']) : 0,
-                'token_length' => isset($data['token']) ? strlen($data['token']) : 0,
+                'has_token_field'  => isset($data['token']),
+                'codigo_length'    => isset($data['codigo']) ? strlen($data['codigo']) : 0,
+                'token_length'     => isset($data['token']) ? strlen($data['token']) : 0,
             ],
         ]);
     }

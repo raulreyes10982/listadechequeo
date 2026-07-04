@@ -3,25 +3,34 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
 
-/**
- * @property int $id
- * @property string|null $descripcion
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @method static \Illuminate\Database\Eloquent\Builder<static>|CategoriaLocal newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|CategoriaLocal newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|CategoriaLocal query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|CategoriaLocal whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|CategoriaLocal whereDescripcion($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|CategoriaLocal whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|CategoriaLocal whereUpdatedAt($value)
- * @mixin \Eloquent
- */
 class CategoriaLocal extends Model
 {
     protected $table = 'categoria_locals';
 
-    protected $fillable = ['descripcion'];
+    protected $fillable = ['descripcion', 'activo'];
+
+    protected $casts = ['activo' => 'boolean'];
+
+    public function nomenclaturas()
+    {
+        return $this->hasMany(Nomenclatura::class);
+    }
+
+    public function locals()
+    {
+        return $this->hasMany(Local::class);
+    }
+
+    // ✅ Scopes para filtrar activos/inactivos fácilmente
+    public function scopeActivos(Builder $query): Builder
+    {
+        return $query->where('activo', true);
+    }
+
+    public function scopeInactivos(Builder $query): Builder
+    {
+        return $query->where('activo', false);
+    }
 }

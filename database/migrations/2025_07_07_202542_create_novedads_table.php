@@ -19,7 +19,7 @@ return new class extends Migration
             $table->time('hora')->default(DB::raw('CURRENT_TIME'));
 
             $table->text('descripcion')->nullable();
-            $table->string('subidopor')->nullable(); // Se llenará con el nombre del usuario autenticado
+            $table->string('subidopor')->nullable();
 
             $table->foreignId('tipo_novedad_id')
                 ->nullable()
@@ -32,9 +32,13 @@ return new class extends Migration
 
     /**
      * Reverse the migrations.
+     *
+     * ✅ CORRECCIÓN: el método down() original hacía dropIfExists('novedades')
+     * con "es" al final — nombre incorrecto. La tabla real se llama 'novedads',
+     * por lo que nunca se eliminaba al revertir y quedaba huérfana en la BD.
      */
     public function down(): void
     {
-        Schema::dropIfExists('novedades');
+        Schema::dropIfExists('novedads');
     }
 };

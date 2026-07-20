@@ -48,3 +48,6 @@ Homestead.json
 /public/storage
 /public_html/storage
 /public_html/hot
+
+# Cursor IDE
+.cursor/

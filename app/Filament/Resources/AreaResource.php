@@ -68,8 +68,8 @@ class AreaResource extends Resource
                                 table: 'areas',
                                 column: 'descripcion',
                                 ignoreRecord: true,
-                                modifyRuleUsing: fn ($rule, Forms\Get $get) =>
-                                    $rule->where('departamento_id', $get('departamento_id'))
+                                modifyRuleUsing: fn($rule, Forms\Get $get) =>
+                                $rule->where('departamento_id', $get('departamento_id'))
                             )
                             ->validationMessages([
                                 'unique' => 'Ya existe un área con este nombre en el departamento seleccionado.',
@@ -130,8 +130,9 @@ class AreaResource extends Resource
 
                 Tables\Actions\DeleteAction::make()
                     ->label('Eliminar')
-                    ->disabled(fn (Area $record) => $record->cargos()->exists())
-                    ->tooltip(fn (Area $record) =>
+                    ->disabled(fn(Area $record) => $record->cargos()->exists())
+                    ->tooltip(
+                        fn(Area $record) =>
                         $record->cargos()->exists()
                             ? 'No se puede eliminar: tiene cargos asociados'
                             : null

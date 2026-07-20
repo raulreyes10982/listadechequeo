@@ -3,17 +3,25 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ColaboradorResource\Pages;
+use App\Filament\Resources\ColaboradorResource\Concerns\GeneraZipColaboradores;
+use App\Filament\Resources\ColaboradorResource\RelationManagers\DocumentosRelationManager;
 use App\Models\Colaborador;
 use Carbon\Carbon;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Wizard;
+use Filament\Forms\Components\Wizard\Step;
 use Filament\Resources\Resource;
+use Filament\Support\Enums\MaxWidth;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Support\Enums\MaxWidth;
-use App\Filament\Resources\ColaboradorResource\Concerns\GeneraZipColaboradores;
-use App\Filament\Resources\ColaboradorResource\RelationManagers\DocumentosRelationManager;
-use Filament\Forms\Components\{TextInput, Select, DatePicker, Wizard, Wizard\Step, FileUpload};
 
 class ColaboradorResource extends Resource
 {
@@ -24,7 +32,7 @@ class ColaboradorResource extends Resource
     protected static ?string $navigationGroup = 'Gestión de Usuarios';
     protected static ?string $navigationLabel = 'Colaboradores';
     protected static ?string $navigationIcon  = 'heroicon-o-users';
-    protected static ?int    $navigationSort  = 1;
+    protected static ?int    $navigationSort  = 3;
 
     public static function getModalWidth(): MaxWidth
     {
@@ -37,196 +45,269 @@ class ColaboradorResource extends Resource
             ->schema([
                 Wizard::make([
 
-                    Step::make('Información Personal')
+                    // ════════════════════════════════════════
+                    // PASO 1 — Información Personal
+                    // ════════════════════════════════════════
+                    Step::make('Personal')
+                        ->icon('heroicon-o-user')
+                        ->completedIcon('heroicon-m-check')
                         ->schema([
-                            // ✅ Foto del colaborador
-                            FileUpload::make('foto')
-                                ->label('Fotografía')
-                                ->image()
-                                ->avatar() // recorte circular en el uploader
-                                ->imageEditor()
-                                ->directory('colaboradores')
-                                ->visibility('public')
-                                ->maxSize(2048) // 2MB
-                                ->columnSpan(2),
 
-                            TextInput::make('nombre')
-                                ->label('Nombre')
-                                ->columnSpan(3)
-                                ->maxLength(250)
-                                ->required(),
+                            // Foto + datos básicos en la misma fila
+                            Grid::make(12)
+                                ->schema([
+                                    // Foto a la izquierda
+                                    FileUpload::make('foto')
+                                        ->label('Cambiar foto')
+                                        ->image()
+                                        ->avatar()
+                                        ->imageEditor()
+                                        ->directory('colaboradores')
+                                        ->visibility('public')
+                                        ->maxSize(2048)
+                                        ->columnSpan(2),
 
-                            TextInput::make('apellido')
-                                ->label('Apellido')
-                                ->columnSpan(3)
-                                ->maxLength(250)
-                                ->required(),
+                                    // Nombre y apellido a la derecha de la foto
+                                    Grid::make(2)
+                                        ->schema([
+                                            TextInput::make('nombre')
+                                                ->label('Nombre *')
+                                                ->required()
+                                                ->maxLength(250),
 
-                            TextInput::make('edad')
-                                ->label('Edad')
-                                ->columnSpan(2)
-                                ->readOnly()
-                                ->suffix('años')
-                                ->dehydrated(false)
-                                ->helperText('Se calcula automáticamente'),
-
-                            DatePicker::make('fecha_nacimiento')
-                                ->label('Fecha de Nacimiento')
-                                ->columnSpan(2)
-                                ->native(false)
-                                ->firstDayOfWeek(7)
-                                ->reactive()
-                                ->maxDate(now()->subYears(16))
-                                ->afterStateUpdated(function ($state, callable $set) {
-                                    $set('edad', $state ? Carbon::parse($state)->age : null);
-                                }),
-
-                            TextInput::make('lugarnacimiento')
-                                ->label('Lugar de Nacimiento')
-                                ->columnSpan(4)
-                                ->maxLength(250),
-
-                            Select::make('genero_id')
-                                ->label('Género')
-                                ->columnSpan(2)
-                                ->relationship('genero', 'descripcion')
-                                ->searchable()->required()->preload(),
-
-                            Select::make('tipo_documento_id')
-                                ->label('Tipo de Documento')
-                                ->columnSpan(2)
-                                ->relationship('tipoDocumento', 'descripcion')
-                                ->searchable()->required()->preload(),
-
-                            TextInput::make('documento')
-                                ->label('Número de Identidad')
-                                ->columnSpan(2)
-                                ->maxLength(20)
-                                ->required()
-                                ->unique(
-                                    table: 'colaboradors',
-                                    column: 'documento',
-                                    ignoreRecord: true
-                                )
-                                ->validationMessages([
-                                    'unique' => 'Ya existe un colaborador registrado con este número de documento.',
+                                            TextInput::make('apellido')
+                                                ->label('Apellido *')
+                                                ->required()
+                                                ->maxLength(250),
+                                        ])
+                                        ->columnSpan(10),
                                 ]),
 
-                            Select::make('estado_civil_id')
-                                ->label('Estado Civil')
-                                ->columnSpan(2)
-                                ->relationship('estadoCivil', 'descripcion')
-                                ->searchable()->required()->preload(),
+                            // Edad, fecha nacimiento, lugar nacimiento
+                            Grid::make(8)
+                                ->schema([
+                                    TextInput::make('edad')
+                                        ->label('Edad')
+                                        ->suffix('años')
+                                        ->readOnly()
+                                        ->dehydrated(false)
+                                        ->helperText('Auto')
+                                        ->columnSpan(2),
 
-                            Select::make('grupo_sanguineo_id')
-                                ->label('Grupo Sanguíneo')
-                                ->columnSpan(2)
-                                ->relationship('grupoSanguineo', 'descripcion')
-                                ->searchable()->required()->preload(),
+                                    DatePicker::make('fecha_nacimiento')
+                                        ->label('Fecha de nacimiento *')
+                                        ->native(false)
+                                        ->maxDate(now()->subYears(16))
+                                        ->reactive()
+                                        ->afterStateUpdated(fn ($state, callable $set) =>
+                                            $set('edad', $state ? Carbon::parse($state)->age : null)
+                                        )
+                                        ->columnSpan(3),
+
+                                    TextInput::make('lugarnacimiento')
+                                        ->label('Lugar de nacimiento *')
+                                        ->maxLength(250)
+                                        ->columnSpan(3),
+                                ]),
+
+                            // Género y estado civil
+                            Grid::make(4)
+                                ->schema([
+                                    Select::make('genero_id')
+                                        ->label('Género *')
+                                        ->relationship('genero', 'descripcion')
+                                        ->searchable()->required()->preload()
+                                        ->columnSpan(2),
+
+                                    Select::make('estado_civil_id')
+                                        ->label('Estado civil *')
+                                        ->relationship('estadoCivil', 'descripcion')
+                                        ->searchable()->required()->preload()
+                                        ->columnSpan(2),
+                                ]),
+
+                            // Documento
+                            Section::make('Documento')
+                                ->schema([
+                                    Grid::make(6)
+                                        ->schema([
+                                            Select::make('tipo_documento_id')
+                                                ->label('Tipo de documento *')
+                                                ->relationship('tipoDocumento', 'descripcion')
+                                                ->searchable()->required()->preload()
+                                                ->columnSpan(3),
+
+                                            TextInput::make('documento')
+                                                ->label('Número *')
+                                                ->required()
+                                                ->maxLength(20)
+                                                ->unique(
+                                                    table: 'colaboradors',
+                                                    column: 'documento',
+                                                    ignoreRecord: true
+                                                )
+                                                ->validationMessages([
+                                                    'unique' => 'Ya existe un colaborador con este número.',
+                                                ])
+                                                ->columnSpan(1),
+
+                                            Select::make('grupo_sanguineo_id')
+                                                ->label('Grupo sanguíneo')
+                                                ->relationship('grupoSanguineo', 'descripcion')
+                                                ->searchable()->preload()
+                                                ->columnSpan(2),
+                                        ]),
+                                ])
+                                ->compact(),
                         ]),
 
-                    Step::make('Información de Contacto')
+                    // ════════════════════════════════════════
+                    // PASO 2 — Información de Contacto
+                    // ════════════════════════════════════════
+                    Step::make('Contacto')
+                        ->icon('heroicon-o-phone')
+                        ->completedIcon('heroicon-m-check')
                         ->schema([
-                            TextInput::make('barrio')
-                                ->label('Barrio')
-                                ->columnSpan(4)->maxLength(250),
 
-                            TextInput::make('direccion')
-                                ->label('Dirección')
-                                ->columnSpan(4)->maxLength(250),
+                            Section::make('Información de contacto')
+                                ->schema([
+                                    Grid::make(6)
+                                        ->schema([
+                                            TextInput::make('barrio')
+                                                ->label('Barrio *')
+                                                ->maxLength(250)
+                                                ->columnSpan(2),
 
-                            TextInput::make('celular')
-                                ->label('Celular')
-                                ->columnSpan(2)
-                                ->maxLength(20)
-                                ->required()
-                                ->tel(),
+                                            TextInput::make('direccion')
+                                                ->label('Dirección *')
+                                                ->maxLength(250)
+                                                ->columnSpan(4),
+                                        ]),
 
-                            TextInput::make('telefono')
-                                ->label('Teléfono')
-                                ->columnSpan(2)->tel()->maxLength(20),
+                                    Grid::make(4)
+                                        ->schema([
+                                            TextInput::make('celular')
+                                                ->label('Celular *')
+                                                ->required()
+                                                ->tel()
+                                                ->maxLength(20)
+                                                ->columnSpan(2),
 
-                            TextInput::make('correo_personal')
-                                ->label('Email personal')
-                                ->columnSpan(4)->email()->maxLength(250),
+                                            TextInput::make('telefono')
+                                                ->label('Teléfono')
+                                                ->tel()
+                                                ->maxLength(20)
+                                                ->nullable()
+                                                ->columnSpan(2),
+                                        ]),
+
+                                    TextInput::make('correo_personal')
+                                        ->label('Correo electrónico *')
+                                        ->email()
+                                        ->maxLength(250)
+                                        ->columnSpanFull(),
+                                ])
+                                ->compact(),
                         ]),
 
-                    Step::make('Información Laboral')
+                    // ════════════════════════════════════════
+                    // PASO 3 — Información Laboral
+                    // ════════════════════════════════════════
+                    Step::make('Laboral')
+                        ->icon('heroicon-o-briefcase')
+                        ->completedIcon('heroicon-m-check')
                         ->schema([
-                            Select::make('departamento_id')
-                                ->label('Departamento')
-                                ->columnSpan(2)
-                                ->relationship('departamento', 'descripcion')
-                                ->searchable()->required()->preload()
-                                ->live() // ✅ para refrescar áreas según departamento
-                                ->afterStateUpdated(fn (callable $set) => $set('area_id', null)),
 
-                            Select::make('area_id')
-                                ->label('Área')
-                                ->columnSpan(3)
-                                ->relationship(
-                                    'area',
-                                    'descripcion',
-                                    // ✅ Solo muestra áreas del departamento seleccionado
-                                    modifyQueryUsing: fn (Forms\Get $get, $query) =>
-                                        $get('departamento_id')
-                                            ? $query->where('departamento_id', $get('departamento_id'))
-                                            : $query
-                                )
-                                ->searchable()->required()->preload()
-                                ->live()
-                                ->afterStateUpdated(fn (callable $set) => $set('cargo_id', null)),
+                            Section::make('Información laboral')
+                                ->schema([
+                                    Grid::make(2)
+                                        ->schema([
+                                            Select::make('departamento_id')
+                                                ->label('Departamento *')
+                                                ->relationship('departamento', 'descripcion')
+                                                ->searchable()->required()->preload()
+                                                ->live()
+                                                ->afterStateUpdated(fn (callable $set) =>
+                                                    $set('area_id', null)
+                                                ),
 
-                            Select::make('cargo_id')
-                                ->label('Cargo')
-                                ->columnSpan(3)
-                                ->relationship(
-                                    'cargo',
-                                    'descripcion',
-                                    // ✅ Solo muestra cargos del área seleccionada
-                                    modifyQueryUsing: fn (Forms\Get $get, $query) =>
-                                        $get('area_id')
-                                            ? $query->where('area_id', $get('area_id'))
-                                            : $query
-                                )
-                                ->searchable()->required()->preload(),
+                                            Select::make('area_id')
+                                                ->label('Área *')
+                                                ->relationship(
+                                                    'area', 'descripcion',
+                                                    modifyQueryUsing: fn (Forms\Get $get, $query) =>
+                                                        $get('departamento_id')
+                                                            ? $query->where('departamento_id', $get('departamento_id'))
+                                                            : $query
+                                                )
+                                                ->searchable()->required()->preload()
+                                                ->live()
+                                                ->afterStateUpdated(fn (callable $set) =>
+                                                    $set('cargo_id', null)
+                                                ),
+                                        ]),
 
-                            Select::make('tipo_contrato_id')
-                                ->label('Tipo de Contrato')
-                                ->columnSpan(4)
-                                ->relationship('tipoContrato', 'descripcion')
-                                ->searchable()->required()->preload(),
+                                    Select::make('cargo_id')
+                                        ->label('Cargo *')
+                                        ->relationship(
+                                            'cargo', 'descripcion',
+                                            modifyQueryUsing: fn (Forms\Get $get, $query) =>
+                                                $get('area_id')
+                                                    ? $query->where('area_id', $get('area_id'))
+                                                    : $query
+                                        )
+                                        ->searchable()->required()->preload()
+                                        ->columnSpanFull(),
+                                ])
+                                ->compact(),
 
-                            DatePicker::make('fechainiciolab')
-                                ->label('Fecha inicio laboral')
-                                ->columnSpan(2)
-                                ->native(false)
-                                ->default(now()),
+                            Section::make('Contrato')
+                                ->schema([
+                                    Grid::make(3)
+                                        ->schema([
+                                            Select::make('tipo_contrato_id')
+                                                ->label('Tipo de contrato *')
+                                                ->relationship('tipoContrato', 'descripcion')
+                                                ->searchable()->required()->preload(),
 
-                            DatePicker::make('fechafinlab')
-                                ->label('Fecha de Terminación')
-                                ->columnSpan(2)
-                                ->native(false)
-                                ->afterOrEqual('fechainiciolab') // ✅ no permite fecha fin antes de inicio
-                                ->helperText('Dejar vacío si el colaborador está activo'),
+                                            DatePicker::make('fechainiciolab')
+                                                ->label('Fecha de inicio *')
+                                                ->native(false)
+                                                ->default(now()),
 
-                            // ℹ️ Informativo: el user_id real se asigna desde UserResource
-                            Forms\Components\Placeholder::make('usuario_info')
-                                ->label('Usuario del sistema')
-                                ->columnSpan(4)
-                                ->content(fn (?Colaborador $record) =>
-                                    $record?->user
-                                        ? "✅ Vinculado: {$record->user->email}"
-                                        : '— Sin usuario asignado. Para crear acceso, ve a Usuarios → Crear.'
-                                ),
+                                            DatePicker::make('fechafinlab')
+                                                ->label('Fecha de terminación')
+                                                ->native(false)
+                                                ->nullable()
+                                                ->helperText('Vacío = activo'),
+                                        ]),
+                                ])
+                                ->compact(),
 
-                            TextInput::make('correo_corporativo')
-                                ->label('Email corporativo')
-                                ->columnSpan(4)->email()->maxLength(250),
+                            Section::make('Acceso al sistema')
+                                ->schema([
+                                    Grid::make(2)
+                                        ->schema([
+                                            Placeholder::make('estado_usuario')
+                                                ->label('Usuario')
+                                                ->content(fn (?Colaborador $record) =>
+                                                    $record?->user_id && $record->user
+                                                        ? "✅ {$record->user->name} ({$record->user->email})"
+                                                        : '— Sin usuario asignado'
+                                                ),
+
+                                            TextInput::make('correo_corporativo')
+                                                ->label('Correo corporativo')
+                                                ->email()
+                                                ->maxLength(250),
+                                        ]),
+                                ])
+                                ->compact(),
                         ]),
+
                 ])
-                ->columns(8)
-                ->columnSpanFull(),
+                ->columnSpanFull()
+                ->skippable(),
             ]);
     }
 
@@ -234,137 +315,77 @@ class ColaboradorResource extends Resource
     {
         return $table
             ->columns([
-                // ✅ Foto del colaborador como avatar circular
                 Tables\Columns\ImageColumn::make('foto')
                     ->label('')
                     ->circular()
-                    ->defaultImageUrl(url('/images/avatar-default.png'))
-                    ->alignment('center'),
+                    ->defaultImageUrl(url('/images/avatar-default.png')),
 
                 Tables\Columns\TextColumn::make('nombre')
-                    ->label('Nombre')
-                    ->sortable()->searchable()->alignment('center')
-                    ->formatStateUsing(fn ($record) => $record->nombre . ' ' . $record->apellido)
-                    ->searchable(['nombre', 'apellido']),
+                    ->label('Colaborador')
+                    ->sortable()->searchable(['nombre', 'apellido'])
+                    ->formatStateUsing(fn ($record) =>
+                        $record->nombre . ' ' . $record->apellido
+                    ),
 
                 Tables\Columns\TextColumn::make('documento')
                     ->label('N° Documento')
                     ->sortable()->searchable()->alignment('center'),
 
-                Tables\Columns\TextColumn::make('tipoDocumento.descripcion')
-                    ->label('Tipo Doc.')
-                    ->sortable()->alignment('center')
-                    ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\TextColumn::make('celular')
                     ->label('Celular')
                     ->searchable()->alignment('center')
-                    ->copyable()
-                    ->copyMessage('Celular copiado'),
-
-                Tables\Columns\TextColumn::make('edad')
-                    ->label('Edad')
-                    ->alignment('center')
-                    ->getStateUsing(fn ($record) =>
-                        $record->fecha_nacimiento
-                            ? Carbon::parse($record->fecha_nacimiento)->age . ' años'
-                            : '—'
-                    )
-                    ->toggleable(isToggledHiddenByDefault: true),
-
-                Tables\Columns\TextColumn::make('departamento.descripcion')
-                    ->label('Departamento')
-                    ->sortable()->searchable()->alignment('center')
-                    ->badge()->color('info'),
-
-                Tables\Columns\TextColumn::make('area.descripcion')
-                    ->label('Área')
-                    ->sortable()->searchable()->alignment('center')
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->copyable()->copyMessage('Copiado'),
 
                 Tables\Columns\TextColumn::make('cargo.descripcion')
                     ->label('Cargo')
                     ->sortable()->searchable()->alignment('center'),
 
-                // ✅ Indicador visual de acceso al sistema
                 Tables\Columns\IconColumn::make('tiene_usuario')
                     ->label('Acceso')
                     ->alignment('center')
                     ->getStateUsing(fn ($record) => $record->user_id !== null)
                     ->boolean()
-                    ->trueIcon('heroicon-m-key')
-                    ->falseIcon('heroicon-m-minus')
-                    ->trueColor('success')
-                    ->falseColor('gray')
-                    ->tooltip(fn ($record) => $record->user_id ? "Usuario: {$record->user?->email}" : 'Sin acceso al sistema'),
+                    ->trueIcon('heroicon-m-key')->falseIcon('heroicon-m-minus')
+                    ->trueColor('success')->falseColor('gray')
+                    ->tooltip(fn ($record) =>
+                        $record->user_id ? "Usuario: {$record->user?->email}" : 'Sin acceso'
+                    ),
 
-                Tables\Columns\TextColumn::make('correo_corporativo')
-                    ->label('Email Corporativo')
-                    ->limit(20)->sortable()->searchable()->alignment('center')
-                    ->toggleable(isToggledHiddenByDefault: true),
-
-                Tables\Columns\TextColumn::make('tipoContrato.descripcion')
-                    ->label('Tipo Contrato')
-                    ->sortable()->searchable()->alignment('center')
-                    ->toggleable(isToggledHiddenByDefault: true),
-
-                Tables\Columns\TextColumn::make('fechainiciolab')
-                    ->label('Inicio')
-                    ->date('d/m/Y')->sortable()->alignment('center')
-                    ->toggleable(isToggledHiddenByDefault: true),
-
-                Tables\Columns\TextColumn::make('fechafinlab')
-                    ->label('Fin')
-                    ->date('d/m/Y')->sortable()->alignment('center')
-                    ->placeholder('Activo')
-                    ->color(fn ($state) => $state ? 'danger' : 'success')
-                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('estado_laboral')
+                    ->label('Estado')
+                    ->badge()
+                    ->getStateUsing(fn ($record) => $record->fechafinlab ? 'Inactivo' : 'Activo')
+                    ->color(fn ($state) => $state === 'Activo' ? 'success' : 'danger'),
             ])
             ->filters([
-                // ✅ Filtros por departamento, área y género
                 Tables\Filters\SelectFilter::make('departamento_id')
                     ->label('Departamento')
                     ->relationship('departamento', 'descripcion')
                     ->searchable()->preload(),
 
-                Tables\Filters\SelectFilter::make('area_id')
-                    ->label('Área')
-                    ->relationship('area', 'descripcion')
-                    ->searchable()->preload(),
-
-                Tables\Filters\SelectFilter::make('genero_id')
-                    ->label('Género')
-                    ->relationship('genero', 'descripcion')
-                    ->preload(),
-
-                // ✅ Filtro de estado laboral
                 Tables\Filters\TernaryFilter::make('estado_laboral')
                     ->label('Estado laboral')
                     ->placeholder('Todos')
-                    ->trueLabel('Activos')
-                    ->falseLabel('Inactivos')
+                    ->trueLabel('Activos')->falseLabel('Inactivos')
                     ->queries(
-                        true:  fn ($query) => $query->whereNull('fechafinlab'),
-                        false: fn ($query) => $query->whereNotNull('fechafinlab'),
+                        true:  fn ($q) => $q->whereNull('fechafinlab'),
+                        false: fn ($q) => $q->whereNotNull('fechafinlab'),
                     ),
 
-                // ✅ Filtro de acceso al sistema
                 Tables\Filters\TernaryFilter::make('tiene_usuario')
                     ->label('Acceso al sistema')
                     ->placeholder('Todos')
-                    ->trueLabel('Con usuario')
-                    ->falseLabel('Sin usuario')
+                    ->trueLabel('Con usuario')->falseLabel('Sin usuario')
                     ->queries(
-                        true:  fn ($query) => $query->whereNotNull('user_id'),
-                        false: fn ($query) => $query->whereNull('user_id'),
+                        true:  fn ($q) => $q->whereNotNull('user_id'),
+                        false: fn ($q) => $q->whereNull('user_id'),
                     ),
             ])
             ->actions([
                 Tables\Actions\EditAction::make()
                     ->label('Editar')
-                    ->modalWidth(static::getModalWidth()),
+                    ->modalWidth(MaxWidth::FiveExtraLarge),
 
-                // ✅ Descarga individual de documentos en ZIP
                 Tables\Actions\Action::make('descargarDocumentos')
                     ->label('Documentos')
                     ->icon('heroicon-o-archive-box-arrow-down')
@@ -377,8 +398,6 @@ class ColaboradorResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-
-                    // ✅ Descarga grupal — ZIP con carpeta por colaborador
                     Tables\Actions\BulkAction::make('descargarDocumentosGrupal')
                         ->label('Descargar documentos (ZIP)')
                         ->icon('heroicon-o-archive-box-arrow-down')
@@ -387,7 +406,7 @@ class ColaboradorResource extends Resource
                         ->deselectRecordsAfterCompletion(),
                 ]),
             ])
-            ->defaultSort('nombre', 'asc'); // ✅ orden alfabético por defecto
+            ->defaultSort('nombre', 'asc');
     }
 
     public static function getRelations(): array
@@ -401,6 +420,7 @@ class ColaboradorResource extends Resource
     {
         return [
             'index' => Pages\ListColaboradors::route('/'),
+            //'edit'  => Pages\EditColaborador::route('/'),
         ];
     }
 }

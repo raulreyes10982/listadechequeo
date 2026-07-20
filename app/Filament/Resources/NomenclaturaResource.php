@@ -25,6 +25,12 @@ class NomenclaturaResource extends Resource
     protected static ?string $label = 'Nomenclaturas';         // Título en singular
     protected static ?int $navigationSort = 2;
 
+    public static function getNavigationBadge(): ?string
+    {
+        return (string) static::getModel()::count();
+    }
+
+
     public static function form(Form $form): Form
     {
         return $form
@@ -49,7 +55,7 @@ class NomenclaturaResource extends Resource
                     ->columnSpanFull()
                     ->maxLength(50)
                     ->nullable(),
-                
+
                 Forms\Components\TextInput::make('codigo')
                     ->label('Código de Nomenclatura')
                     ->required()
@@ -62,7 +68,7 @@ class NomenclaturaResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            
+
             ->columns([
                 Tables\Columns\TextColumn::make('categoriaLocal.descripcion')
                     ->label('Unidad')
@@ -95,7 +101,7 @@ class NomenclaturaResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
     }

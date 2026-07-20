@@ -3,132 +3,154 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ReporteResource\Pages;
+use App\Models\BitacoraEstado;
+use App\Models\Estado;
 use App\Models\Reporte;
 use App\Models\Zona;
-use App\Models\Estado;
-use App\Models\BitacoraEstado;
+use Carbon\Carbon;
 use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TimePicker;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Support\Enums\MaxWidth;
 use Filament\Tables;
-use Filament\Tables\Table;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Actions\ActionGroup;
-use Filament\Notifications\Notification;
+use Filament\Tables\Table;
 use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
 
 class ReporteResource extends Resource
 {
-    protected static ?string $model = Reporte::class;
-
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $model          = Reporte::class;
+    protected static ?string $navigationIcon  = 'heroicon-o-rectangle-stack';
     protected static ?string $navigationGroup = 'Reportes';
     protected static ?string $navigationLabel = 'Reportes';
-    protected static ?int $navigationSort = 7;
+    protected static ?int    $navigationSort  = 7;
 
     public static function form(Form $form): Form
     {
         return $form
-            ->columns(6)
-            ->schema([ 
-                Forms\Components\Hidden::make('subidopor'),
+            ->schema([
+                Hidden::make('subidopor'),
+                Hidden::make('hora')->default(fn () => Carbon::now()->format('H:i')),
+                Hidden::make('fecha')->default(fn () => Carbon::now()->format('Y-m-d')),
 
-                Forms\Components\TimePicker::make('hora')
-                    ->label('Hora')
-                    ->format('H:i')
-                    ->default(Carbon::now()->format('H:i'))
-                    ->hidden(),
+                // ── Encabezado con ícono ──────────────────────────────────
+                Section::make()
+                    ->schema([
+                        Grid::make(1)
+                            ->schema([
+                                \Filament\Forms\Components\Placeholder::make('header')
+                                    ->label('')
+                                    ->content('')
+                                    ->extraAttributes(['class' => 'hidden']),
+                            ]),
+                    ])
+                    ->heading('Crear reporte')
+                    ->description('Completa la información para generar un nuevo reporte.')
+                    ->icon('heroicon-o-document-text')
+                    ->compact(),
 
-                Forms\Components\DatePicker::make('fecha')
-                    ->label('Fecha')
-                    ->format('Y-m-d')
-                    ->default(Carbon::now()->format('Y-m-d'))
-                    ->hidden(),
+                // ── FILA 1: Categoría + Tipo + Prioridad ──────────────────
+                Grid::make(3)
+                    ->schema([
+                        Select::make('categoria_reporte_id')
+                            ->label('Categoría *')
+                            ->relationship('categoria', 'descripcion')
+                            ->preload()->searchable()->required()
+                            ->placeholder('Seleccione una opción'),
 
-                Forms\Components\Select::make('categoria_reporte_id')
-                    ->label('Categoría')
-                    ->relationship('categoria', 'descripcion')
-                    ->preload()
-                    ->searchable()
-                    ->required()
-                    ->columnSpan(2),
+                        Select::make('tipo_reporte_id')
+                            ->label('Tipo de Reporte *')
+                            ->relationship('tipoReporte', 'descripcion')
+                            ->preload()->searchable()->required()
+                            ->placeholder('Seleccione una opción'),
 
-                Forms\Components\Select::make('tipo_reporte_id')
-                    ->label('Tipo de Reporte')
-                    ->relationship('tipoReporte', 'descripcion')
-                    ->preload()
-                    ->searchable()
-                    ->required()
-                    ->columnSpan(2),
+                        Select::make('prioridad_id')
+                            ->label('Prioridad *')
+                            ->relationship('prioridad', 'descripcion')
+                            ->preload()->searchable()->required()
+                            ->placeholder('Seleccione una opción'),
+                    ]),
 
-                Forms\Components\Select::make('prioridad_id')
-                    ->relationship('prioridad', 'descripcion')
-                    ->preload()
-                    ->searchable()
-                    ->required()
-                    ->columnSpan(2),
+                // ── FILA 2: Zona + Ubicación/Unidad ──────────────────────
+                Grid::make(2)
+                    ->schema([
+                        Select::make('zona_id')
+                            ->label('Zona *')
+                            ->relationship('zona', 'descripcion')
+                            ->preload()->searchable()->required()
+                            ->placeholder('Seleccione una opción')
+                            ->live()
+                            ->afterStateUpdated(function (callable $set, $state) {
+                                $zona = Zona::find($state);
+                                if (! $zona || $zona->descripcion !== 'Zona Privada') {
+                                    $set('local_id', null);
+                                } else {
+                                    $set('ubicacion_id', null);
+                                }
+                            }),
 
-                Select::make('zona_id')
-                    ->label('Zona')
-                    ->relationship('zona', 'descripcion')
-                    ->preload()
-                    ->searchable()
-                    ->required()
-                    ->columnSpan(3)
-                    ->reactive()
-                    ->afterStateUpdated(function (callable $set, $state) {
-                        $zona = Zona::find($state);
-                        if (!$zona || $zona->descripcion !== 'Zona Privada') {
-                            $set('local_id', null);
-                        } else {
-                            $set('ubicacion_id', null);
-                        }
-                    }),
+                        // Ubicación normal
+                        Select::make('ubicacion_id')
+                            ->label('Ubicación *')
+                            ->relationship('ubicacion', 'descripcion')
+                            ->preload()->searchable()->required()
+                            ->placeholder('Seleccione una opción')
+                            ->visible(fn (Forms\Get $get) =>
+                                optional(Zona::find($get('zona_id')))->descripcion !== 'Zona Privada'
+                            ),
 
-                Select::make('ubicacion_id')
-                    ->label('Ubicación')
-                    ->relationship('ubicacion', 'descripcion')
-                    ->preload()
-                    ->searchable()
-                    ->required()
-                    ->columnSpan(3)
-                    ->visible(fn (callable $get) => optional(Zona::find($get('zona_id')))->descripcion !== 'Zona Privada'),
+                        // Unidad privada
+                        Select::make('local_id')
+                            ->label('Unidad Privada *')
+                            ->relationship('local', 'descripcion')
+                            ->getOptionLabelFromRecordUsing(fn ($record) => $record->option_label)
+                            ->searchable()->preload()
+                            ->placeholder('Seleccione una unidad')
+                            ->visible(fn (Forms\Get $get) =>
+                                optional(Zona::find($get('zona_id')))->descripcion === 'Zona Privada'
+                            ),
+                    ]),
 
-                Select::make('local_id')
-                    ->label('Unidad Privada')
-                    ->relationship('local', 'descripcion')
-                    ->getOptionLabelFromRecordUsing(fn ($record) => $record->option_label)
-                    ->searchable()
-                    ->columnSpan(3)
-                    ->preload()
-                    ->visible(fn (callable $get) => optional(Zona::find($get('zona_id')))->descripcion === 'Zona Privada'),
+                // ── FILA 3: Descripción + Imágenes ───────────────────────
+                Grid::make(2)
+                    ->schema([
+                        Textarea::make('descripcion')
+                            ->label('Descripción')
+                            ->placeholder('Describe el incidente o situación reportada...')
+                            ->maxLength(1000)
+                            ->rows(6),
 
-                Forms\Components\Textarea::make('descripcion')
-                    ->label('Descripción')
-                    ->maxLength(500)
-                    ->columnSpan(5),
+                        FileUpload::make('imagenes')
+                            ->label('Imágenes')
+                            ->directory('reportes')
+                            ->disk('public')
+                            ->image()
+                            ->multiple()
+                            ->maxFiles(5)
+                            ->maxSize(10240) // 10MB
+                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'application/pdf'])
+                            ->helperText('Formatos permitidos: JPG, PNG, PDF (Máx. 10 MB)')
+                            ->panelLayout('grid'),
+                    ]),
 
-                FileUpload::make('imagenes')
-                    ->label('Imágenes')
-                    ->directory('reportes')
-                    ->disk('public')
-                    ->image()
-                    ->multiple()
-                    ->maxFiles(3)
-                    ->columnSpan(1),
-
-                Forms\Components\Select::make('estado_id')
+                // ── Estado (solo en edición) ──────────────────────────────
+                Select::make('estado_id')
+                    ->label('Estado')
                     ->relationship('estado', 'descripcion')
-                    ->preload()
-                    ->searchable()
-                    ->columnSpan(3)
+                    ->preload()->searchable()
                     ->visibleOn(['edit', 'view'])
                     ->disabled(),
-                
+
             ]);
     }
 
@@ -138,103 +160,79 @@ class ReporteResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('subidopor')
                     ->label('Subido por')
-                    ->sortable()
-                    ->searchable()
-                    ->alignment('center'),
+                    ->sortable()->searchable()->alignment('center'),
 
                 Tables\Columns\TextColumn::make('fecha')
                     ->label('Fecha')
                     ->dateTime('d/M/Y')
-                    ->searchable()
-                    ->sortable()
-                    ->alignment('center'),
+                    ->searchable()->sortable()->alignment('center'),
 
                 Tables\Columns\TextColumn::make('hora')
                     ->label('Hora')
-                    ->dateTime('H:i')
-                    ->searchable()
-                    ->sortable()
-                    ->alignment('center'),
+                    ->time('H:i')
+                    ->sortable()->alignment('center'),
 
                 Tables\Columns\TextColumn::make('categoria.descripcion')
                     ->label('Reporte')
-                    ->sortable(),
+                    ->sortable()->searchable()->alignment('center'),
 
                 Tables\Columns\TextColumn::make('tipoReporte.descripcion')
                     ->label('Tipo de Reporte')
-                    ->sortable()
-                    ->searchable()
-                    ->alignment('center'),
+                    ->sortable()->searchable()->alignment('center'),
 
                 Tables\Columns\TextColumn::make('prioridad.descripcion')
                     ->label('Prioridad')
-                    ->sortable()
-                    ->searchable()
-                    ->alignment('center'),
+                    ->badge()
+                    ->color(fn ($state) => match (strtolower($state ?? '')) {
+                        'alta', 'urgente', 'crítica', 'critica' => 'danger',
+                        'media'  => 'warning',
+                        'baja'   => 'info',
+                        default  => 'gray',
+                    })
+                    ->sortable()->searchable()->alignment('center'),
 
                 Tables\Columns\TextColumn::make('zona.descripcion')
                     ->label('Zona')
-                    ->sortable()
-                    ->searchable()
-                    ->alignment('center'),
+                    ->sortable()->searchable()->alignment('center'),
 
                 Tables\Columns\TextColumn::make('ubicacion_y_unidad')
                     ->label('Ubicación')
-                    ->getStateUsing(function ($record) {
-                        $ubicacion = $record->ubicacion?->descripcion ?? '';
-                        $unidadPrivada = $record->local?->option_label;
-                        return $unidadPrivada ? "{$ubicacion} {$unidadPrivada}" : $ubicacion;
-                    })
-                    ->searchable()
-                    ->sortable()
-                    ->alignment('center'),
+                    ->getStateUsing(fn ($record) =>
+                        ($record->ubicacion?->descripcion ?? '') .
+                        ($record->local ? ' ' . $record->local->option_label : '')
+                    )
+                    ->sortable()->searchable()->alignment('center'),
 
                 Tables\Columns\TextColumn::make('estado.descripcion')
                     ->label('Estado')
                     ->badge()
                     ->color(fn ($state) => match ($state) {
-                        'Pendiente'   => 'danger',
-                        'En proceso'  => 'warning',
-                        'verificado'  => 'info',
-                        'Finalizado'  => 'success',
-                        default       => 'gray',
+                        'Pendiente'  => 'danger',
+                        'En proceso' => 'warning',
+                        'Finalizado', 'Cerrado' => 'success',
+                        default      => 'gray',
                     })
-                    ->sortable()
-                    ->searchable()
-                    ->alignment('center'),
-                
-                Tables\Columns\IconColumn::make('imagenes')
-                    ->label('Imágenes')
-                    ->getStateUsing(fn ($record) => !empty($record->imagenes))
-                    ->boolean()
-                    ->trueIcon('heroicon-o-camera')
-                    ->falseIcon('heroicon-o-x-circle')
-                    ->alignment('center')
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->sortable()->searchable()->alignment('center'),
 
-                Tables\Columns\TextColumn::make('descripcion')
-                    ->label('Observaciones')
-                    ->wrap()
-                    ->alignment('center')
-                    ->sortable()
-                    ->searchable()
+                Tables\Columns\TextColumn::make('created_at')
+                    ->dateTime()->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->defaultSort('created_at', 'desc')
             ->actions([
                 ActionGroup::make([
                     Tables\Actions\EditAction::make()
                         ->label('Editar')
-                        ->modalWidth('3xl'),
+                        ->modalWidth(MaxWidth::ThreeExtraLarge),
 
                     Tables\Actions\DeleteAction::make()
                         ->label('Eliminar'),
 
+                    // ✅ Cambiar estado con permiso Spatie
                     Action::make('cambiarEstadoBitacora')
                         ->label('Cambiar estado')
                         ->modalWidth('lg')
                         ->icon('heroicon-o-arrow-path')
-                        // ✅ Try-catch porque hasPermissionTo() lanza excepción
-                        // si el permiso no existe en la BD (PermissionDoesNotExist)
                         ->visible(function () {
                             if (! Auth::check()) return false;
                             try {
@@ -246,61 +244,51 @@ class ReporteResource extends Resource
                         ->form([
                             Select::make('estado_id')
                                 ->label('Nuevo estado')
-                                ->options(Estado::all()->pluck('descripcion', 'id'))
+                                ->options(Estado::pluck('descripcion', 'id')->toArray())
                                 ->required(),
+
                             Textarea::make('descripcion')
-                                ->label('Observaciones del cambio')
+                                ->label('Observaciones')
                                 ->rows(4)
                                 ->required(),
                         ])
-                        ->action(function ($data, $record) {
+                        ->action(function (array $data, $record) {
+                            $estadoAnterior  = $record->estado->descripcion ?? 'Sin estado';
+                            $nuevoEstado     = Estado::find($data['estado_id']);
+                            $nuevoEstadoDesc = $nuevoEstado->descripcion ?? 'Desconocido';
 
+                            $record->update(['estado_id' => $data['estado_id']]);
 
-                            
-                            // Guardar estado anterior
-                            $estadoAnterior = $record->estado->descripcion ?? 'Sin estado';
-                            
-                            // 1. Actualizar el estado del reporte
-                            $record->estado_id = $data['estado_id'];
-                            $guardado = $record->save();
-                            
-                            if ($guardado) {
-                                // Recargar el modelo
-                                $record->refresh();
-                                
-                                // 2. Obtener nuevo estado
-                                $nuevoEstado = Estado::find($data['estado_id']);
-                                $nuevoEstadoDesc = $nuevoEstado->descripcion ?? 'Desconocido';
-                                
-                                // 3. Crear registro en bitácora
-                                BitacoraEstado::create([
-                                    'reporte_id'    => $record->id,
-                                    'estado_id'     => $data['estado_id'],
-                                    'descripcion'   => "Cambio de estado: {$estadoAnterior} → {$nuevoEstadoDesc}. " . 
-                                                      $data['descripcion'],
-                                    'cambiado_por'  => Auth::user()->name ?? 'Sistema',
-                                    'fecha'         => Carbon::now()->format('Y-m-d'),
-                                    'hora'          => Carbon::now()->format('H:i:s'),
-                                ]);
-                                
-                                Notification::make()
-                                    ->title('¡Estado actualizado!')
-                                    ->body("El estado ha sido cambiado de {$estadoAnterior} a {$nuevoEstadoDesc}")
-                                    ->success()
-                                    ->send();
-                            } else {
-                                Notification::make()
-                                    ->title('Error')
-                                    ->body('No se pudo actualizar el estado del reporte')
-                                    ->danger()
-                                    ->send();
-                            }
+                            BitacoraEstado::create([
+                                'reporte_id'   => $record->id,
+                                'estado_id'    => $data['estado_id'],
+                                'descripcion'  => "Cambio: {$estadoAnterior} → {$nuevoEstadoDesc}. " . $data['descripcion'],
+                                'cambiado_por' => Auth::user()->name ?? 'Sistema',
+                                'fecha'        => Carbon::now()->format('Y-m-d'),
+                                'hora'         => Carbon::now()->format('H:i:s'),
+                            ]);
+
+                            Notification::make()
+                                ->title('Estado actualizado')
+                                ->body("De «{$estadoAnterior}» a «{$nuevoEstadoDesc}»")
+                                ->success()
+                                ->send();
                         })
                         ->after(fn ($livewire) => $livewire->dispatch('$refresh')),
                 ])
                 ->button()
                 ->label('Acciones'),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
             ]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [];
     }
 
     public static function getPages(): array

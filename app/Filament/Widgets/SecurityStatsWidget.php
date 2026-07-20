@@ -6,6 +6,7 @@ use App\Models\RegistrarTurno;
 use Carbon\Carbon;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Support\Facades\Cache;
 
 class SecurityStatsWidget extends BaseWidget
 {
@@ -14,47 +15,53 @@ class SecurityStatsWidget extends BaseWidget
 
     protected function getStats(): array
     {
-        $hoy = Carbon::today();
-        $now = Carbon::now();
+        $hoy = Carbon::today()->toDateString();
+        $now = Carbon::now()->toTimeString();
 
-        // ── 1. Guardias con turno HOY ─────────────────────────────────────
-        $turnosHoy  = RegistrarTurno::whereDate('fecha', $hoy)->count();
+        $data = Cache::remember("security_stats_{$hoy}", 60, function () use ($hoy, $now) {
+            return [
+                'turnosHoy' => RegistrarTurno::whereDate('fecha', $hoy)->count(),
 
-        $conIngreso = RegistrarTurno::whereDate('fecha', $hoy)
-            ->whereHas('verificaciones', fn ($q) =>
-                $q->where('tipo', 'ingreso')->where('estado', 'verificado')
-            )->count();
+                'conIngreso' => RegistrarTurno::whereDate('fecha', $hoy)
+                    ->whereHas('verificaciones', fn ($q) =>
+                        $q->where('tipo', 'ingreso')->where('estado', 'verificado')
+                    )->count(),
 
-        // ── 2. Puestos sin cobertura ahora mismo ──────────────────────────
-        $sinCobertura = RegistrarTurno::whereDate('fecha', $hoy)
-            ->whereTime('hora_inicio', '<=', $now->toTimeString())
-            ->whereTime('hora_fin',    '>=', $now->toTimeString())
-            ->whereDoesntHave('verificaciones', fn ($q) =>
-                $q->where('tipo', 'ingreso')->where('estado', 'verificado')
-            )->count();
+                'sinCobertura' => RegistrarTurno::whereDate('fecha', $hoy)
+                    ->whereTime('hora_inicio', '<=', $now)
+                    ->whereTime('hora_fin',    '>=', $now)
+                    ->whereDoesntHave('verificaciones', fn ($q) =>
+                        $q->where('tipo', 'ingreso')->where('estado', 'verificado')
+                    )->count(),
 
-        // ── 3. Turnos vencidos sin salida (cierre automático hoy) ─────────
-        $vencidosSinSalida = RegistrarTurno::whereDate('fecha', $hoy)
-            ->whereHas('verificaciones', fn ($q) =>
-                $q->where('tipo', 'salida')->where('estado', 'vencido')
-            )->count();
+                'vencidosSinSalida' => RegistrarTurno::whereDate('fecha', $hoy)
+                    ->whereHas('verificaciones', fn ($q) =>
+                        $q->where('tipo', 'salida')->where('estado', 'vencido')
+                    )->count(),
+            ];
+        });
 
         return [
-            Stat::make('Guardias programados hoy', $turnosHoy)
-                ->description("{$conIngreso} con ingreso verificado")
+            Stat::make('Guardias programados hoy', $data['turnosHoy'])
+                ->description("{$data['conIngreso']} con ingreso verificado")
                 ->descriptionIcon('heroicon-m-user-group')
-                ->color($conIngreso === $turnosHoy && $turnosHoy > 0 ? 'success' : 'warning')
-                ->chart([$turnosHoy, $conIngreso]),
+                ->color($data['conIngreso'] === $data['turnosHoy'] && $data['turnosHoy'] > 0
+                    ? 'success' : 'warning')
+                ->chart([$data['turnosHoy'], $data['conIngreso']]),
 
-            Stat::make('Puestos sin cobertura', $sinCobertura)
+            Stat::make('Puestos sin cobertura', $data['sinCobertura'])
                 ->description('Turnos activos sin escaneo de ingreso')
-                ->descriptionIcon($sinCobertura > 0 ? 'heroicon-m-exclamation-circle' : 'heroicon-m-shield-check')
-                ->color($sinCobertura > 0 ? 'danger' : 'success'),
+                ->descriptionIcon($data['sinCobertura'] > 0
+                    ? 'heroicon-m-exclamation-circle'
+                    : 'heroicon-m-shield-check')
+                ->color($data['sinCobertura'] > 0 ? 'danger' : 'success'),
 
-            Stat::make('Sin salida registrada', $vencidosSinSalida)
+            Stat::make('Sin salida registrada', $data['vencidosSinSalida'])
                 ->description('Turnos cerrados automáticamente hoy')
-                ->descriptionIcon($vencidosSinSalida > 0 ? 'heroicon-m-exclamation-triangle' : 'heroicon-m-check-circle')
-                ->color($vencidosSinSalida > 0 ? 'warning' : 'success'),
+                ->descriptionIcon($data['vencidosSinSalida'] > 0
+                    ? 'heroicon-m-exclamation-triangle'
+                    : 'heroicon-m-check-circle')
+                ->color($data['vencidosSinSalida'] > 0 ? 'warning' : 'success'),
         ];
     }
 }

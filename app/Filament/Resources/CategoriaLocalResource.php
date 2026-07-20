@@ -21,6 +21,12 @@ class CategoriaLocalResource extends Resource
     protected static ?string $label = 'Categoria';         // Título en singular
     protected static ?int $navigationSort = 1;
 
+     public static function getNavigationBadge(): ?string
+    {
+        return (string) static::getModel()::count();
+    } 
+
+
     public static function form(Form $form): Form
     {
         return $form

@@ -17,10 +17,16 @@ class ContratistasResource extends Resource
 {
     protected static ?string $model = Contratistas::class;
 
-    protected static ?string $navigationGroup = 'Organización';
+    protected static ?string $navigationGroup = 'Gestión de Usuarios';
     protected static ?string $navigationLabel = 'Contratistas';
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document';
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 2;
+
+     public static function getNavigationBadge(): ?string
+    {
+        return (string) static::getModel()::count();
+    } 
+
 
     public static function form(Form $form): Form
     {

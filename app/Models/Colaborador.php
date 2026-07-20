@@ -32,6 +32,7 @@ class Colaborador extends Model
         'tipo_contrato_id',
         'genero_id',
         'grupo_sanguineo_id',
+        'foto',
     ];
 
     protected $casts = [

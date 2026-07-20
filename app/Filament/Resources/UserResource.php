@@ -22,7 +22,13 @@ class UserResource extends Resource
     protected static ?string $navigationIcon  = 'heroicon-o-user-circle';
     protected static ?string $navigationGroup = 'Gestión de Usuarios';
     protected static ?string $navigationLabel = 'Usuarios';
-    protected static ?int    $navigationSort  = 2;
+    protected static ?int    $navigationSort  = 3;
+
+    public static function getNavigationBadge(): ?string
+    {
+        return (string) static::getModel()::count();
+    }
+
 
     /*
     |--------------------------------------------------------------------------
@@ -41,9 +47,9 @@ class UserResource extends Resource
                         Select::make('colaborador_id')
                             ->label('Colaborador')
                             ->options(
-                                Colaborador::all()->mapWithKeys(fn ($c) => [
+                                Colaborador::all()->mapWithKeys(fn($c) => [
                                     $c->id => trim("{$c->nombre} {$c->apellido}") .
-                                            ($c->user_id ? ' (ya tiene usuario)' : ''),
+                                        ($c->user_id ? ' (ya tiene usuario)' : ''),
                                 ])
                             )
                             ->searchable()
@@ -91,11 +97,12 @@ class UserResource extends Resource
                             ->password()
                             ->revealable()
                             ->minLength(8)
-                            ->dehydrateStateUsing(fn ($state) => Hash::make($state))
-                            ->dehydrated(fn ($state) => filled($state))
+                            ->dehydrateStateUsing(fn($state) => Hash::make($state))
+                            ->dehydrated(fn($state) => filled($state))
                             // ✅ Requerida solo al CREAR, no al editar
-                            ->required(fn (string $operation) => $operation === 'create')
-                            ->helperText(fn (string $operation) =>
+                            ->required(fn(string $operation) => $operation === 'create')
+                            ->helperText(
+                                fn(string $operation) =>
                                 $operation === 'edit'
                                     ? 'Deja vacío para mantener la contraseña actual'
                                     : 'Mínimo 8 caracteres'
@@ -205,17 +212,19 @@ class UserResource extends Resource
             ->actions([
                 // ✅ Acción rápida de activar/desactivar desde la tabla
                 Tables\Actions\Action::make('toggleActive')
-                    ->label(fn ($record) => $record->is_active ? 'Desactivar' : 'Activar')
-                    ->icon(fn ($record) => $record->is_active ? 'heroicon-m-lock-closed' : 'heroicon-m-lock-open')
-                    ->color(fn ($record) => $record->is_active ? 'danger' : 'success')
+                    ->label(fn($record) => $record->is_active ? 'Desactivar' : 'Activar')
+                    ->icon(fn($record) => $record->is_active ? 'heroicon-m-lock-closed' : 'heroicon-m-lock-open')
+                    ->color(fn($record) => $record->is_active ? 'danger' : 'success')
                     ->requiresConfirmation()
-                    ->modalHeading(fn ($record) => $record->is_active ? 'Desactivar usuario' : 'Activar usuario')
-                    ->modalDescription(fn ($record) =>
+                    ->modalHeading(fn($record) => $record->is_active ? 'Desactivar usuario' : 'Activar usuario')
+                    ->modalDescription(
+                        fn($record) =>
                         $record->is_active
                             ? "El usuario {$record->name} quedará bloqueado y no podrá iniciar sesión."
                             : "El usuario {$record->name} podrá iniciar sesión nuevamente."
                     )
-                    ->action(fn ($record) =>
+                    ->action(
+                        fn($record) =>
                         $record->is_active ? $record->deactivate() : $record->activate()
                     ),
 

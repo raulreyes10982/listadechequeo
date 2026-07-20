@@ -13,20 +13,19 @@ use Livewire\Attributes\On;
 
 class ReportesPendientesWidget extends BaseWidget
 {
-    protected static ?int $sort = 3;
+    protected static ?int $sort = 4;
     protected int | string | array $columnSpan = 'full';
 
-    // ✅ Período activo y filtro de estado heredado de tarjetas
-    public string  $periodo      = 'todos';   // ayer|semanal|mensual|trimestral|semestral|anual|todos|personalizado
+    public string  $periodo      = 'todos';
     public ?string $fechaDesde   = null;
     public ?string $fechaHasta   = null;
-    public ?string $estadoFiltro = null;       // recibido desde ReportesResumenWidget
+    public ?string $estadoFiltro = null;
 
-    // ✅ Escucha el evento del widget de tarjetas
+    // ✅ Escucha filtro de estado desde las tarjetas
     #[On('filtroReporteSeleccionado')]
-    public function actualizarFiltroEstado(?string $estado): void
+    public function actualizarFiltroEstado(mixed $estado = null): void
     {
-        $this->estadoFiltro = ($estado === 'all' || $estado === null) ? null : $estado;
+        $this->estadoFiltro = (is_null($estado) || $estado === 'all') ? null : (string) $estado;
     }
 
     public function setPeriodo(string $periodo): void
@@ -34,30 +33,39 @@ class ReportesPendientesWidget extends BaseWidget
         $this->periodo    = $periodo;
         $this->fechaDesde = null;
         $this->fechaHasta = null;
+
+        // ✅ Notificar a gráfica y donas
+        $this->dispatch('periodoCambiado',
+            periodo: $periodo,
+            desde: null,
+            hasta: null
+        );
     }
 
     public function getHeading(): string
     {
-        $label = match ($this->periodo) {
-            'ayer'        => 'Ayer',
-            'semanal'     => 'Esta semana',
-            'mensual'     => 'Este mes',
-            'trimestral'  => 'Último trimestre',
-            'semestral'   => 'Último semestre',
-            'anual'       => 'Este año',
-            'personalizado' => 'Período personalizado',
-            default       => 'Todos',
+        $pLabel = match ($this->periodo) {
+            'ayer'          => 'Ayer',
+            'semanal'       => 'Esta semana',
+            'mensual'       => 'Este mes',
+            'trimestral'    => 'Último trimestre',
+            'semestral'     => 'Último semestre',
+            'anual'         => 'Este año',
+            'personalizado' => ($this->fechaDesde && $this->fechaHasta)
+                ? Carbon::parse($this->fechaDesde)->format('d/m/Y') . ' → ' . Carbon::parse($this->fechaHasta)->format('d/m/Y')
+                : 'Período personalizado',
+            default         => 'Todos los reportes',
         };
 
-        $estadoLabel = match ($this->estadoFiltro) {
-            'critico'   => ' · Críticos',
-            'pendiente' => ' · Pendientes',
-            'en_proceso'=> ' · En proceso',
-            'finalizado'=> ' · Finalizados',
-            default     => '',
+        $eLabel = match ($this->estadoFiltro) {
+            'critico'    => ' · 🔴 Críticos',
+            'pendiente'  => ' · 🟡 Pendientes',
+            'en_proceso' => ' · 🔵 En proceso',
+            'finalizado' => ' · 🟢 Finalizados',
+            default      => '',
         };
 
-        return "⚠️ Reportes — {$label}{$estadoLabel}";
+        return "📋 {$pLabel}{$eLabel}";
     }
 
     public function table(Table $table): Table
@@ -65,7 +73,6 @@ class ReportesPendientesWidget extends BaseWidget
         return $table
             ->query($this->buildQuery())
             ->headerActions([
-                // ✅ Botones de período rápido
                 Tables\Actions\Action::make('ayer')
                     ->label('Ayer')
                     ->size('sm')
@@ -108,7 +115,7 @@ class ReportesPendientesWidget extends BaseWidget
                     ->color($this->periodo === 'todos' ? 'primary' : 'gray')
                     ->action(fn () => $this->setPeriodo('todos')),
 
-                // ✅ Filtro de rango de fechas personalizado
+                // ✅ Rango personalizado — también despacha periodoCambiado
                 Tables\Actions\Action::make('personalizado')
                     ->label('Rango de fechas')
                     ->icon('heroicon-m-calendar-days')
@@ -122,12 +129,20 @@ class ReportesPendientesWidget extends BaseWidget
                         DatePicker::make('hasta')
                             ->label('Hasta')
                             ->native(false)
-                            ->required(),
+                            ->required()
+                            ->afterOrEqual('desde'),
                     ])
                     ->action(function (array $data) {
                         $this->periodo    = 'personalizado';
                         $this->fechaDesde = $data['desde'];
                         $this->fechaHasta = $data['hasta'];
+
+                        // ✅ Notificar a gráfica y donas con el rango exacto
+                        $this->dispatch('periodoCambiado',
+                            periodo: 'personalizado',
+                            desde: $data['desde'],
+                            hasta: $data['hasta']
+                        );
                     }),
             ])
             ->columns([
@@ -148,19 +163,19 @@ class ReportesPendientesWidget extends BaseWidget
                     ->badge()
                     ->color(fn ($state) => match (strtolower($state ?? '')) {
                         'alta', 'urgente', 'crítica', 'critica' => 'danger',
-                        'media'  => 'warning',
-                        'baja'   => 'info',
-                        default  => 'gray',
+                        'media'   => 'warning',
+                        'baja'    => 'info',
+                        default   => 'gray',
                     }),
 
                 Tables\Columns\TextColumn::make('estado.descripcion')
                     ->label('Estado')
                     ->badge()
                     ->color(fn ($state) => match ($state) {
-                        'Pendiente'  => 'danger',
-                        'En proceso' => 'warning',
+                        'Pendiente'                          => 'warning',
+                        'En proceso', 'Asignado'            => 'info',
                         'Finalizado', 'Cerrado', 'Resuelto' => 'success',
-                        default      => 'gray',
+                        default                             => 'gray',
                     }),
 
                 Tables\Columns\TextColumn::make('subidopor')
@@ -170,6 +185,7 @@ class ReportesPendientesWidget extends BaseWidget
                 Tables\Columns\TextColumn::make('tiempo_abierto')
                     ->label('Tiempo abierto')
                     ->badge()
+                    ->alignment('center')
                     ->getStateUsing(function ($record) {
                         $horas = $record->created_at->diffInHours(now());
                         if ($horas < 24) return "{$horas}h";
@@ -189,50 +205,46 @@ class ReportesPendientesWidget extends BaseWidget
             ->defaultSort('created_at', 'desc')
             ->paginated([10, 25, 50])
             ->emptyStateHeading('Sin reportes para este período')
-            ->emptyStateIcon('heroicon-o-check-badge');
+            ->emptyStateDescription('Cambia el filtro o el período para ver más resultados.')
+            ->emptyStateIcon('heroicon-o-document-magnifying-glass');
     }
 
     protected function buildQuery(): Builder
     {
         $query = Reporte::query()->with(['tipoReporte', 'zona', 'prioridad', 'estado']);
 
-        // ── Filtro por período ────────────────────────────────────────────
+        // ── Filtro de período ─────────────────────────────────────────────
         match ($this->periodo) {
-            'ayer'        => $query->whereDate('created_at', Carbon::yesterday()),
-            'semanal'     => $query->whereBetween('created_at', [
+            'ayer'       => $query->whereDate('created_at', Carbon::yesterday()),
+            'semanal'    => $query->whereBetween('created_at', [
                                 Carbon::now()->startOfWeek(),
-                                Carbon::now()->endOfWeek(),
-                            ]),
-            'mensual'     => $query->whereMonth('created_at', Carbon::now()->month)
-                                   ->whereYear('created_at', Carbon::now()->year),
-            'trimestral'  => $query->whereBetween('created_at', [
-                                Carbon::now()->subMonths(3)->startOfDay(),
-                                Carbon::now(),
-                            ]),
-            'semestral'   => $query->whereBetween('created_at', [
-                                Carbon::now()->subMonths(6)->startOfDay(),
-                                Carbon::now(),
-                            ]),
-            'anual'       => $query->whereYear('created_at', Carbon::now()->year),
-            'personalizado' => $query->when($this->fechaDesde, fn ($q) =>
-                                    $q->whereDate('created_at', '>=', $this->fechaDesde)
-                                )->when($this->fechaHasta, fn ($q) =>
-                                    $q->whereDate('created_at', '<=', $this->fechaHasta)
-                                ),
-            default       => null, // todos
+                                Carbon::now()->endOfWeek()]),
+            'mensual'    => $query->whereMonth('created_at', Carbon::now()->month)
+                                  ->whereYear('created_at', Carbon::now()->year),
+            'trimestral' => $query->whereBetween('created_at', [
+                                Carbon::now()->subMonths(3)->startOfDay(), Carbon::now()]),
+            'semestral'  => $query->whereBetween('created_at', [
+                                Carbon::now()->subMonths(6)->startOfDay(), Carbon::now()]),
+            'anual'      => $query->whereYear('created_at', Carbon::now()->year),
+            'personalizado' => $query
+                ->when($this->fechaDesde, fn ($q) => $q->whereDate('created_at', '>=', $this->fechaDesde))
+                ->when($this->fechaHasta, fn ($q) => $q->whereDate('created_at', '<=', $this->fechaHasta)),
+            default      => null,
         };
 
-        // ── Filtro por estado (desde tarjetas) ────────────────────────────
+        // ── Filtro de estado (desde las tarjetas) ─────────────────────────
         match ($this->estadoFiltro) {
-            'critico'    => $query->whereHas('prioridad', fn ($q) =>
-                                $q->whereIn('descripcion', ['Alta', 'Urgente', 'Crítica', 'Critica'])
-                            )->whereHas('estado', fn ($q) =>
-                                $q->whereNotIn('descripcion', ['Finalizado', 'Cerrado', 'Resuelto'])
-                            ),
+            'critico'    => $query
+                ->whereHas('prioridad', fn ($q) =>
+                    $q->whereIn('descripcion', ['Alta', 'Urgente', 'Crítica', 'Critica'])
+                )
+                ->whereHas('estado', fn ($q) =>
+                    $q->whereNotIn('descripcion', ['Finalizado', 'Cerrado', 'Resuelto'])
+                ),
             'pendiente'  => $query->whereHas('estado', fn ($q) =>
                                 $q->where('descripcion', 'Pendiente')),
             'en_proceso' => $query->whereHas('estado', fn ($q) =>
-                                $q->where('descripcion', 'En proceso')),
+                                $q->whereIn('descripcion', ['En proceso', 'Asignado'])),
             'finalizado' => $query->whereHas('estado', fn ($q) =>
                                 $q->whereIn('descripcion', ['Finalizado', 'Cerrado', 'Resuelto'])),
             default      => null,

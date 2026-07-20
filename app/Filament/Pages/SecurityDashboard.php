@@ -6,6 +6,7 @@ use App\Filament\Widgets\GuardiasHoyWidget;
 use App\Filament\Widgets\PermisosVencenWidget;
 use App\Filament\Widgets\PuestosSinCoberturaWidget;
 use App\Filament\Widgets\ReportesPendientesWidget;
+use App\Filament\Widgets\ReportesDonaWidget;
 use App\Filament\Widgets\ReportesResumenWidget;
 use App\Filament\Widgets\ReportesPorMesChart;
 use App\Filament\Widgets\ReporteTecnicoStatsWidget;
@@ -22,6 +23,13 @@ class SecurityDashboard extends Page
     protected static ?int    $navigationSort  = -1;
 
     protected static string $view = 'filament.pages.security-dashboard';
+
+    // ✅ El dashboard principal es accesible para cualquier usuario autenticado
+    // No tiene restricción de rol porque es la página de inicio del panel
+    public static function canAccess(): bool
+    {
+        return auth()->check();
+    }
 
     public string $activeTab = 'seguridad';
 
@@ -64,9 +72,10 @@ class SecurityDashboard extends Page
 
             // ── Reportes — solo reportes (tarjetas resumen + gráfica + pendientes) ──
             'reportes' => [
-                ReportesResumenWidget::class,  // tarjetas: total, críticos, por estado/categoría/prioridad
-                ReportesPorMesChart::class,    // gráfica de barras últimos 6 meses
-                ReportesPendientesWidget::class, // tabla reportes sin cerrar +48h
+                ReportesResumenWidget::class,   // tarjetas clickeables
+                ReportesPorMesChart::class,     // gráfica barras 6 meses
+                ReportesDonaWidget::class,      // 3 donas: estado, prioridad, categoría
+                ReportesPendientesWidget::class, // tabla con filtros de período
             ],
 
             // ── Permisos — separados de Reportes ─────────────────────────

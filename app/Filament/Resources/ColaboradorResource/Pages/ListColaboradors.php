@@ -3,8 +3,10 @@
 namespace App\Filament\Resources\ColaboradorResource\Pages;
 
 use App\Filament\Resources\ColaboradorResource;
+use Carbon\Carbon;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Support\Enums\MaxWidth;
 
 class ListColaboradors extends ListRecords
 {
@@ -13,10 +15,16 @@ class ListColaboradors extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            // ✅ Usa getModalWidth() del Resource — mismo ancho que el modal de editar
+            // ✅ Crear también en modal — sin cambiar de página
             Actions\CreateAction::make()
-                ->label('Crear colaborador')
-                ->modalWidth(ColaboradorResource::getModalWidth()),
+                ->label('Nuevo colaborador')
+                ->modalWidth(MaxWidth::FiveExtraLarge)
+                ->mutateFormDataUsing(function (array $data): array {
+                    if (! empty($data['fecha_nacimiento'])) {
+                        $data['edad'] = Carbon::parse($data['fecha_nacimiento'])->age;
+                    }
+                    return $data;
+                }),
         ];
     }
 }

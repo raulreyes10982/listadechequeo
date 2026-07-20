@@ -84,9 +84,10 @@ class DashboardPanelProvider extends PanelProvider
                 'Localización',
                 'Programación',
                 'Permisos',
+                'Equipos',
                 'Reportes',
                 'Novedades',
-                'Equipos',
+                
             ])
             ->renderHook(
                 PanelsRenderHook::BODY_END,
